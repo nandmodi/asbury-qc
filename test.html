@@ -78,6 +78,7 @@
             transform: translateY(-3px);
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
         }
+        /* Updated image styling to be responsive */
         .image-card img {
             width: 100%;
             height: auto;
@@ -91,7 +92,9 @@
 </head>
 <body class="bg-gray-100">
 
+    <!-- Main Container. Removed 'container' class to allow for full-width sections -->
     <div id="app" class="mx-auto">
+
         <!-- Login View -->
         <div id="login-view" class="card max-w-md mx-auto">
             <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">QC Login</h1>
@@ -101,6 +104,9 @@
                     <select id="email" class="login-input" required>
                         <option value="shweta.gupta@spyne.co.in">shweta.gupta@spyne.co.in</option>
                         <option value="abhishek.kumar@spyne.ai">abhishek.kumar@spyne.ai</option>
+                        <option value="Kishor@spyne.ai">Kishor@spyne.ai</option>
+                        <option value="Praveen.agarwal@spyne.ai">Praveen.agarwal@spyne.ai</option>
+                        <option value="sumit.rana@spyne.ai">sumit.rana@spyne.ai</option>
                     </select>
                 </div>
                 <div>
@@ -115,6 +121,7 @@
 
         <!-- QC View -->
         <div id="qc-view" class="hidden">
+            <!-- Non-image content stays within a central container -->
             <div class="px-8 py-4 max-w-7xl mx-auto">
                 <div class="flex justify-between items-center mb-6">
                     <h1 class="text-3xl font-bold text-gray-800" id="sku-name-display"></h1>
@@ -122,10 +129,12 @@
                 </div>
             </div>
             
+            <!-- Image display section is now full-width -->
             <div id="image-display" class="space-y-6">
                 <!-- Images will be dynamically inserted here -->
             </div>
 
+            <!-- Non-image content stays within a central container -->
             <div class="px-8 py-4 max-w-7xl mx-auto">
                 <div class="card mt-8 flex flex-col items-center">
                     <div class="flex flex-wrap justify-center gap-6 mb-8">
@@ -155,6 +164,7 @@
                 </div>
             </div>
         </div>
+
     </div>
 
     <!-- Modal for messages -->
@@ -170,7 +180,10 @@
         let allSkus = [];
         let currentSkuIndex = 0;
 
+        // Google Form submission URL
         const formResponseUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/formResponse';
+        
+        // Correct entry IDs based on the prefilled form URL provided
         const entryIds = {
             email: 'entry.1543570917',
             teamName: 'entry.462099554',
@@ -179,6 +192,7 @@
             skuId: 'entry.1740050363'
         };
 
+        // UI element references
         const loginView = document.getElementById('login-view');
         const qcView = document.getElementById('qc-view');
         const loginForm = document.getElementById('login-form');
@@ -192,6 +206,7 @@
         const modalMessage = document.getElementById('modal-message');
         const modalCloseBtn = document.getElementById('modal-close-btn');
 
+        // Function to show a modal message instead of alert()
         function showModal(message) {
             modalMessage.textContent = message;
             modal.classList.remove('hidden');
@@ -201,6 +216,7 @@
             modal.classList.add('hidden');
         });
 
+        // Function to fetch and parse the CSV data
         async function fetchCsvData() {
             try {
                 const response = await fetch(sheetUrl);
@@ -215,6 +231,7 @@
 
         function parseCsv(csvText) {
             const lines = csvText.trim().split('\n');
+            
             const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().toLowerCase());
             console.log("Parsed headers:", headers);
             
@@ -306,16 +323,17 @@
                     const grid = document.createElement('div');
                     grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 px-8';
                     
+                    // Sort images by sequence number in ascending order
                     const sortedImages = currentSku.categories[category].sort((a, b) => a.sequenceNo - b.sequenceNo);
 
                     sortedImages.forEach(image => {
-                        const imageCard = document.createElement('div');
-                        imageCard.className = 'image-card relative';
-                        imageCard.innerHTML = `
-                            <span class="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs font-bold px-2 py-1 rounded-full">${image.sequenceNo}</span>
-                            <img class="w-full h-auto max-h-64 object-contain" src="${image.url}" alt="Image ID: ${image.id}">
+                        const imageCard = `
+                            <div class="image-card relative">
+                                <span class="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs font-bold px-2 py-1 rounded-full">${image.sequenceNo}</span>
+                                <img src="${image.url}" alt="Image ID: ${image.id}" class="w-full h-auto max-h-64 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x300/e5e7eb/7f8c8d?text=Image+Not+Found';">
+                            </div>
                         `;
-                        grid.appendChild(imageCard);
+                        grid.innerHTML += imageCard;
                     });
                     
                     categorySection.appendChild(grid);
@@ -326,6 +344,7 @@
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
             showModal("Logging in and fetching data...");
             
             modal.classList.add('hidden');
@@ -361,36 +380,34 @@
             formData.append(entryIds.skuName, currentSku.name);
             formData.append(entryIds.skuId, currentSku.id);
 
+            // If no options are selected, append "Done" to the formData
             if (selectedOptions.length === 0) {
                 formData.append(entryIds.issueOptions, "Done");
             } else {
+                // Otherwise, append the selected options
                 selectedOptions.forEach(option => {
                     formData.append(entryIds.issueOptions, option);
                 });
             }
             
             console.log("Submitting the following data:", Object.fromEntries(formData.entries()));
-            submitBtn.disabled = true;
-
+            
             try {
-                await fetch(formResponseUrl, {
+                const response = await fetch(formResponseUrl, {
                     method: 'POST',
                     body: formData,
                     mode: 'no-cors'
                 });
 
-                showModal("QC data submitted successfully. Loading next SKU...");
-                setTimeout(() => {
-                    modal.classList.add('hidden');
+                if (response.ok || response.type === 'opaque') {
                     currentSkuIndex++;
                     displayCurrentSku();
-                    submitBtn.disabled = false;
-                }, 1000);
-
+                } else {
+                    showModal("Failed to submit data. Please try again.");
+                }
             } catch (error) {
                 console.error("Submission error:", error);
-                showModal("An error occurred during submission. Please check your network and try again.");
-                submitBtn.disabled = false;
+                showModal("An error occurred during submission. Please try again.");
             }
         });
 
