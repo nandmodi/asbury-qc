@@ -57,6 +57,20 @@
         .btn-primary:active {
             transform: scale(0.98);
         }
+        .btn-secondary {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #6b7280;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.125rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
         .image-category-title {
             font-size: 1.25rem;
             font-weight: 600;
@@ -78,7 +92,6 @@
             transform: translateY(-3px);
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
         }
-        /* Updated image styling to be responsive */
         .image-card img {
             width: 100%;
             height: auto;
@@ -88,13 +101,36 @@
         .image-title {
             display: none;
         }
+        .key-shortcut {
+            display: inline-block;
+            background-color: #e5e7eb;
+            padding: 0.15rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            margin-left: 0.5rem;
+        }
+        .submission-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+        }
+        .submission-status.error {
+            background-color: #ef4444;
+        }
+        .submission-status.success {
+            background-color: #10b981;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
-
-    <!-- Main Container. Removed 'container' class to allow for full-width sections -->
     <div id="app" class="mx-auto">
-
         <!-- Login View -->
         <div id="login-view" class="card max-w-md mx-auto">
             <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">QC Login</h1>
@@ -121,15 +157,44 @@
 
         <!-- QC View -->
         <div id="qc-view" class="hidden">
-            <!-- Non-image content stays within a central container -->
             <div class="px-8 py-4 max-w-7xl mx-auto">
                 <div class="flex justify-between items-center mb-6">
                     <h1 class="text-3xl font-bold text-gray-800" id="sku-name-display"></h1>
                     <p class="text-lg text-gray-600" id="sku-id-display"></p>
                 </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                    <h2 class="text-lg font-semibold text-blue-800 mb-2">Keyboard Shortcuts</h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="flex items-center">
+                            <span class="text-blue-700">1</span>
+                            <span class="ml-2 text-blue-700">Sequence</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-blue-700">2</span>
+                            <span class="ml-2 text-blue-700">Tilt</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-blue-700">3</span>
+                            <span class="ml-2 text-blue-700">Issue</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-blue-700">4</span>
+                            <span class="ml-2 text-blue-700">Option 1</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-blue-700">5</span>
+                            <span class="ml-2 text-blue-700">Option 2</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-blue-700">Enter</span>
+                            <span class="ml-2 text-blue-700">Submit</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <!-- Image display section is now full-width -->
+            <!-- Image display section -->
             <div id="image-display" class="space-y-6">
                 <!-- Images will be dynamically inserted here -->
             </div>
@@ -140,45 +205,56 @@
                     <div class="flex flex-wrap justify-center gap-6 mb-8">
                         <label class="flex items-center text-gray-700 font-medium">
                             <input type="checkbox" name="qc_option" value="Sequence" class="h-5 w-5 rounded-md text-blue-600">
-                            <span class="ml-2">Sequence</span>
+                            <span class="ml-2">Sequence <span class="key-shortcut">1</span></span>
                         </label>
                         <label class="flex items-center text-gray-700 font-medium">
                             <input type="checkbox" name="qc_option" value="Tilt" class="h-5 w-5 rounded-md text-blue-600">
-                            <span class="ml-2">Tilt</span>
+                            <span class="ml-2">Tilt <span class="key-shortcut">2</span></span>
                         </label>
                         <label class="flex items-center text-gray-700 font-medium">
                             <input type="checkbox" name="qc_option" value="Issue" class="h-5 w-5 rounded-md text-blue-600">
-                            <span class="ml-2">Issue</span>
+                            <span class="ml-2">Issue <span class="key-shortcut">3</span></span>
                         </label>
                         <label class="flex items-center text-gray-700 font-medium">
                             <input type="checkbox" name="qc_option" value="option1" class="h-5 w-5 rounded-md text-blue-600">
-                            <span class="ml-2">Option 1</span>
+                            <span class="ml-2">Option 1 <span class="key-shortcut">4</span></span>
                         </label>
                         <label class="flex items-center text-gray-700 font-medium">
                             <input type="checkbox" name="qc_option" value="option2" class="h-5 w-5 rounded-md text-blue-600">
-                            <span class="ml-2">Option 2</span>
+                            <span class="ml-2">Option 2 <span class="key-shortcut">5</span></span>
                         </label>
                     </div>
 
-                    <button id="submit-btn" class="btn-primary w-64">Submit</button>
+                    <div class="flex gap-4">
+                        <button id="submit-btn" class="btn-primary w-64">Submit <span class="key-shortcut">Enter</span></button>
+                        <button id="skip-btn" class="btn-secondary w-32">Skip</button>
+                    </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <!-- Modal for messages -->
-    <div id="modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
-            <p id="modal-message" class="text-gray-800 text-lg"></p>
-            <button id="modal-close-btn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">OK</button>
+    <div id="modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-md mx-auto">
+            <p id="modal-message" class="text-gray-800 text-lg mb-4"></p>
+            <div class="flex justify-center gap-4">
+                <button id="modal-confirm-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">OK</button>
+                <button id="modal-cancel-btn" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 hidden">Cancel</button>
+            </div>
         </div>
+    </div>
+
+    <!-- Submission Status Indicator -->
+    <div id="submission-status" class="submission-status">
+        <span id="status-message"></span>
     </div>
 
     <script>
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG8Kx21fGcA06IVjoAARb1L656dTEBbzxfuBTXCn1rqDfYiP1AQeXDaD9WolWVlCn1CLFVjdXEHZXU/pub?gid=0&single=true&output=csv';
         let allSkus = [];
         let currentSkuIndex = 0;
+        let submissionQueue = [];
 
         // Google Form submission URL
         const formResponseUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/formResponse';
@@ -202,17 +278,44 @@
         const skuIdDisplay = document.getElementById('sku-id-display');
         const imageDisplay = document.getElementById('image-display');
         const submitBtn = document.getElementById('submit-btn');
+        const skipBtn = document.getElementById('skip-btn');
         const modal = document.getElementById('modal');
         const modalMessage = document.getElementById('modal-message');
-        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const submissionStatus = document.getElementById('submission-status');
+        const statusMessage = document.getElementById('status-message');
 
-        // Function to show a modal message instead of alert()
-        function showModal(message) {
+        // Function to show a modal message
+        function showModal(message, isConfirmation = false) {
             modalMessage.textContent = message;
             modal.classList.remove('hidden');
+            modalCancelBtn.classList.toggle('hidden', !isConfirmation);
         }
 
-        modalCloseBtn.addEventListener('click', () => {
+        // Function to show submission status
+        function showStatus(message, isError = false, isSuccess = false) {
+            statusMessage.textContent = message;
+            submissionStatus.classList.remove('error', 'success');
+            
+            if (isError) {
+                submissionStatus.classList.add('error');
+            } else if (isSuccess) {
+                submissionStatus.classList.add('success');
+            }
+            
+            submissionStatus.style.display = 'block';
+            
+            setTimeout(() => {
+                submissionStatus.style.display = 'none';
+            }, 3000);
+        }
+
+        modalConfirmBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+
+        modalCancelBtn.addEventListener('click', () => {
             modal.classList.add('hidden');
         });
 
@@ -247,6 +350,7 @@
 
             if (skuIdIndex === -1 || skuNameIndex === -1 || teamNameIndex === -1 || imageCategoryIndex === -1 || outputImageUrlIndex === -1 || statusIndex === -1 || frameSeqNoIndex === -1) {
                 console.error("Missing required headers in CSV.");
+                showModal("CSV format is incorrect. Please check the spreadsheet.");
                 return { skus: [], teamNames: [] };
             }
 
@@ -302,6 +406,7 @@
                 skuIdDisplay.textContent = "";
                 imageDisplay.innerHTML = "";
                 submitBtn.disabled = true;
+                skipBtn.disabled = true;
                 return;
             }
 
@@ -347,18 +452,17 @@
             
             showModal("Logging in and fetching data...");
             
-            modal.classList.add('hidden');
-            loginView.classList.add('hidden');
-            qcView.classList.remove('hidden');
-            displayCurrentSku();
-        });
-        
-        (async function init() {
+            // Wait a moment for the modal to be visible
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             const csvText = await fetchCsvData();
             if (csvText) {
                 const parsedData = parseCsv(csvText);
                 allSkus = parsedData.skus;
                 console.log("Parsed SKUs:", allSkus);
+                
+                // Clear existing options
+                teamNameSelect.innerHTML = '';
                 
                 parsedData.teamNames.forEach(team => {
                     const option = document.createElement('option');
@@ -366,8 +470,64 @@
                     option.textContent = team;
                     teamNameSelect.appendChild(option);
                 });
+                
+                modal.classList.add('hidden');
+                loginView.classList.add('hidden');
+                qcView.classList.remove('hidden');
+                displayCurrentSku();
             }
-        })();
+        });
+        
+        // Function to submit form data using a more reliable method
+        async function submitFormData(formData) {
+            return new Promise((resolve) => {
+                // Create a hidden iframe to submit the form
+                const iframe = document.createElement('iframe');
+                iframe.name = 'form-submission-iframe';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+                
+                // Create a form
+                const form = document.createElement('form');
+                form.action = formResponseUrl;
+                form.method = 'POST';
+                form.target = 'form-submission-iframe';
+                form.style.display = 'none';
+                
+                // Add form data
+                for (const [key, value] of formData.entries()) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
+                }
+                
+                document.body.appendChild(form);
+                
+                // Handle response
+                iframe.onload = function() {
+                    console.log('Form submission completed');
+                    document.body.removeChild(form);
+                    document.body.removeChild(iframe);
+                    resolve(true);
+                };
+                
+                // Submit the form
+                form.submit();
+                
+                // Fallback in case iframe.onload doesn't fire
+                setTimeout(() => {
+                    if (document.body.contains(form)) {
+                        document.body.removeChild(form);
+                    }
+                    if (document.body.contains(iframe)) {
+                        document.body.removeChild(iframe);
+                    }
+                    resolve(true);
+                }, 3000);
+            });
+        }
 
         submitBtn.addEventListener('click', async () => {
             const currentSku = allSkus[currentSkuIndex];
@@ -392,23 +552,42 @@
             
             console.log("Submitting the following data:", Object.fromEntries(formData.entries()));
             
+            // Show submitting status
+            showStatus("Submitting...", false, false);
+            
             try {
-                const response = await fetch(formResponseUrl, {
-                    method: 'POST',
-                    body: formData,
-                    mode: 'no-cors'
-                });
-
-                if (response.ok || response.type === 'opaque') {
+                // Submit using the iframe method
+                const success = await submitFormData(formData);
+                
+                if (success) {
+                    showStatus("Submission successful!", false, true);
                     currentSkuIndex++;
                     displayCurrentSku();
                 } else {
-                    showModal("Failed to submit data. Please try again.");
+                    showStatus("Submission may have failed. Please check your connection.", true, false);
+                    // Store in queue for retry later
+                    submissionQueue.push({
+                        formData: Object.fromEntries(formData.entries()),
+                        timestamp: new Date().toISOString()
+                    });
+                    localStorage.setItem('submissionQueue', JSON.stringify(submissionQueue));
                 }
             } catch (error) {
                 console.error("Submission error:", error);
-                showModal("An error occurred during submission. Please try again.");
+                showStatus("An error occurred during submission. Please try again.", true, false);
+                
+                // Store in queue for retry later
+                submissionQueue.push({
+                    formData: Object.fromEntries(formData.entries()),
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem('submissionQueue', JSON.stringify(submissionQueue));
             }
+        });
+
+        skipBtn.addEventListener('click', () => {
+            currentSkuIndex++;
+            displayCurrentSku();
         });
 
         document.addEventListener('keydown', (e) => {
@@ -433,8 +612,27 @@
                     document.querySelector('input[value="option2"]').click();
                     break;
                 case 'Enter':
-                    submitBtn.click();
+                    if (e.target.tagName !== 'BUTTON') {
+                        submitBtn.click();
+                    }
                     break;
+                case 's':
+                case 'S':
+                    if (e.target.tagName !== 'BUTTON') {
+                        skipBtn.click();
+                    }
+                    break;
+            }
+        });
+
+        // Initialize by checking for any queued submissions
+        window.addEventListener('load', () => {
+            const savedQueue = localStorage.getItem('submissionQueue');
+            if (savedQueue) {
+                submissionQueue = JSON.parse(savedQueue);
+                if (submissionQueue.length > 0) {
+                    showModal(`You have ${submissionQueue.length} pending submissions. They will be retried automatically.`);
+                }
             }
         });
     </script>
