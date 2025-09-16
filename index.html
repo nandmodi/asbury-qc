@@ -84,16 +84,10 @@
         .image-card img {
             width: 100%;
             height: 180px;
-            object-fit: cover;
+            object-fit: contain; /* Changed from 'cover' to 'contain' */
         }
         .image-title {
-            text-align: center;
-            font-size: 0.875rem;
-            color: #4b5563;
-            padding: 0.5rem 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            display: none; /* Hide the image title */
         }
     </style>
 </head>
@@ -118,10 +112,6 @@
                     <select id="team-name" class="login-input" required>
                         <!-- Options will be populated by JavaScript -->
                     </select>
-                </div>
-                <div>
-                    <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <input type="date" id="date" class="login-input" required>
                 </div>
                 <button type="submit" class="btn-primary">Login</button>
             </form>
@@ -161,6 +151,24 @@
                         <span class="ml-2">Option 2</span>
                     </label>
                 </div>
+
+                <div class="w-full mb-6">
+                    <label for="comments" class="block text-sm font-medium text-gray-700 mb-1">Any other comment</label>
+                    <textarea id="comments" rows="3" class="login-input"></textarea>
+                </div>
+                
+                <div class="w-full flex justify-center items-center gap-6 mb-8">
+                    <p class="text-sm font-medium text-gray-700">Is there any other problem?</p>
+                    <label class="flex items-center text-gray-700 font-medium">
+                        <input type="radio" name="other_problem" value="Yes" class="h-4 w-4 rounded-full text-blue-600">
+                        <span class="ml-2">Yes</span>
+                    </label>
+                    <label class="flex items-center text-gray-700 font-medium">
+                        <input type="radio" name="other_problem" value="No" class="h-4 w-4 rounded-full text-blue-600" checked>
+                        <span class="ml-2">No</span>
+                    </label>
+                </div>
+
                 <button id="submit-btn" class="btn-primary w-64">Submit</button>
             </div>
         </div>
@@ -180,14 +188,32 @@
         let allSkus = [];
         let currentSkuIndex = 0;
 
+        // Google Form submission URL
+        const formResponseUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/formResponse';
+        
+        // IMPORTANT: The entry IDs below are placeholders. You must get the correct IDs
+        // from your live Google Form's HTML source.
+        const entryIds = {
+            email: 'entry.169136171',
+            teamName: 'entry.2069722396',
+            date: 'entry.1051512411',
+            skuId: 'entry.410141680',
+            issueOptions: 'entry.1017726402',
+            comments: 'entry.1504149931',
+            otherProblem: 'entry.1818296312'
+        };
+
         // UI element references
         const loginView = document.getElementById('login-view');
         const qcView = document.getElementById('qc-view');
         const loginForm = document.getElementById('login-form');
+        const emailSelect = document.getElementById('email');
         const teamNameSelect = document.getElementById('team-name');
+        const dateInput = document.getElementById('date');
         const skuNameDisplay = document.getElementById('sku-name-display');
         const skuIdDisplay = document.getElementById('sku-id-display');
         const imageDisplay = document.getElementById('image-display');
+        const commentsInput = document.getElementById('comments');
         const submitBtn = document.getElementById('submit-btn');
         const modal = document.getElementById('modal');
         const modalMessage = document.getElementById('modal-message');
@@ -265,6 +291,9 @@
             
             // Clear previous checkboxes
             document.querySelectorAll('input[name="qc_option"]').forEach(cb => cb.checked = false);
+            commentsInput.value = '';
+            document.querySelector('input[name="other_problem"][value="No"]').checked = true;
+
 
             for (const category in currentSku.categories) {
                 const categorySection = document.createElement('div');
@@ -277,8 +306,7 @@
                 currentSku.categories[category].forEach(image => {
                     const imageCard = `
                         <div class="image-card">
-                            <img src="${image.url}" alt="Image ID: ${image.id}" class="w-full h-48 object-cover">
-                            <p class="image-title">${image.id}</p>
+                            <img src="${image.url}" alt="Image ID: ${image.id}" class="w-full h-48 object-contain">
                         </div>
                     `;
                     grid.innerHTML += imageCard;
@@ -293,14 +321,9 @@
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // In a real application, you would send login credentials to a server
-            // and get a response. Here, we'll simulate a successful login and
-            // load the data.
-            
             showModal("Logging in and fetching data...");
             
-            // Now that data is loaded, you can proceed
-            modal.classList.add('hidden'); // Hide modal once data is loaded
+            modal.classList.add('hidden');
             loginView.classList.add('hidden');
             qcView.classList.remove('hidden');
             displayCurrentSku();
@@ -324,26 +347,44 @@
         })();
 
         // Handle submission of QC data
-        submitBtn.addEventListener('click', () => {
+        submitBtn.addEventListener('click', async () => {
             const currentSku = allSkus[currentSkuIndex];
             const selectedOptions = Array.from(document.querySelectorAll('input[name="qc_option"]:checked'))
                                        .map(cb => cb.value);
-            
-            // You would send this data to a backend API here
-            const qcData = {
-                sku_id: currentSku.id,
-                options: selectedOptions,
-                email: document.getElementById('email').value,
-                team: teamNameSelect.value,
-                date: document.getElementById('date').value
-            };
 
-            console.log("Submitting QC data:", qcData);
+            const otherProblem = document.querySelector('input[name="other_problem"]:checked').value;
             
-            // For this example, we'll just move to the next SKU
-            currentSkuIndex++;
-            displayCurrentSku();
-            showModal("QC data submitted successfully. Loading next SKU...");
+            showModal("Submitting QC data...");
+
+            const formData = new FormData();
+            formData.append(entryIds.email, emailSelect.value);
+            formData.append(entryIds.teamName, teamNameSelect.value);
+            // The date field is no longer in the UI, so we can omit it from the form data
+            // formData.append(entryIds.date, dateInput.value);
+            formData.append(entryIds.skuId, currentSku.id);
+            selectedOptions.forEach(option => {
+                formData.append(entryIds.issueOptions, option);
+            });
+            formData.append(entryIds.comments, commentsInput.value);
+            formData.append(entryIds.otherProblem, otherProblem);
+            
+            try {
+                const response = await fetch(formResponseUrl, {
+                    method: 'POST',
+                    body: new URLSearchParams(formData)
+                });
+                
+                if (response.ok) {
+                    showModal("QC data submitted successfully. Loading next SKU...");
+                    currentSkuIndex++;
+                    displayCurrentSku();
+                } else {
+                    showModal("Failed to submit data. Please try again.");
+                }
+            } catch (error) {
+                console.error("Submission error:", error);
+                showModal("An error occurred during submission. Please try again.");
+            }
         });
     </script>
 </body>
