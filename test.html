@@ -231,7 +231,7 @@
             
             // Use a flexible regex to split while preserving content within quotes and trim spaces from headers
             const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().toLowerCase());
-            console.log("Parsed headers:", headers); // Diagnostic log
+            console.log("Parsed headers:", headers);
             
             const dataLines = lines.slice(1);
             
@@ -239,9 +239,10 @@
             const skuNameIndex = headers.indexOf('sku_name');
             const teamNameIndex = headers.indexOf('team_name');
             const imageCategoryIndex = headers.indexOf('image_category');
-            const outputImageUrlIndex = headers.indexOf('output_image_hres_url'); // Corrected header name
-            
-            if (skuIdIndex === -1 || skuNameIndex === -1 || teamNameIndex === -1 || imageCategoryIndex === -1 || outputImageUrlIndex === -1) {
+            const outputImageUrlIndex = headers.indexOf('output_image_hres_url');
+            const statusIndex = headers.indexOf('status'); // Get the index for the 'Status' column
+
+            if (skuIdIndex === -1 || skuNameIndex === -1 || teamNameIndex === -1 || imageCategoryIndex === -1 || outputImageUrlIndex === -1 || statusIndex === -1) {
                 console.error("Missing required headers in CSV.");
                 return { skus: [], teamNames: [] };
             }
@@ -250,9 +251,16 @@
             const teamNames = new Set();
             
             dataLines.forEach(line => {
-                // Use the same robust splitting method for data lines
                 const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/^"|"$/g, ''));
                 
+                const status = values[statusIndex] ? values[statusIndex].trim() : '';
+                const excludedStatuses = ["Tilt", "Sequence", "Issue"];
+
+                if (excludedStatuses.includes(status)) {
+                    // Skip this line if the status is one of the excluded values
+                    return;
+                }
+
                 const sku_id = values[skuIdIndex];
                 const sku_name = values[skuNameIndex];
                 const team_name = values[teamNameIndex];
@@ -300,27 +308,32 @@
             
             document.querySelectorAll('input[name="qc_option"]').forEach(cb => cb.checked = false);
 
-            for (const category in currentSku.categories) {
-                const categorySection = document.createElement('div');
-                categorySection.className = 'my-4';
-                categorySection.innerHTML = `<h2 class="image-category-title px-8 py-4 max-w-7xl mx-auto">${category}</h2>`;
-                
-                // This line was changed to ensure a responsive 4-column grid
-                const grid = document.createElement('div');
-                grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 px-8';
-                
-                currentSku.categories[category].forEach(image => {
-                    const imageCard = `
-                        <div class="image-card">
-                            <img src="${image.url}" alt="Image ID: ${image.id}" class="w-full h-auto max-h-64 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x300/e5e7eb/7f8c8d?text=Image+Not+Found';">
-                        </div>
-                    `;
-                    grid.innerHTML += imageCard;
-                });
-                
-                categorySection.appendChild(grid);
-                imageDisplay.appendChild(categorySection);
-            }
+            // Define the specific order for image categories
+            const orderedCategories = ['Exterior', 'Interior', 'Focus Shoot', 'Miscellaneous'];
+
+            // Loop through the ordered list of categories to ensure consistent display
+            orderedCategories.forEach(category => {
+                if (currentSku.categories[category]) {
+                    const categorySection = document.createElement('div');
+                    categorySection.className = 'my-4';
+                    categorySection.innerHTML = `<h2 class="image-category-title px-8 py-4 max-w-7xl mx-auto">${category}</h2>`;
+                    
+                    const grid = document.createElement('div');
+                    grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 px-8';
+                    
+                    currentSku.categories[category].forEach(image => {
+                        const imageCard = `
+                            <div class="image-card">
+                                <img src="${image.url}" alt="Image ID: ${image.id}" class="w-full h-auto max-h-64 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x300/e5e7eb/7f8c8d?text=Image+Not+Found';">
+                            </div>
+                        `;
+                        grid.innerHTML += imageCard;
+                    });
+                    
+                    categorySection.appendChild(grid);
+                    imageDisplay.appendChild(categorySection);
+                }
+            });
         }
 
         loginForm.addEventListener('submit', async (e) => {
@@ -339,7 +352,7 @@
             if (csvText) {
                 const parsedData = parseCsv(csvText);
                 allSkus = parsedData.skus;
-                console.log("Parsed SKUs:", allSkus); // Diagnostic log
+                console.log("Parsed SKUs:", allSkus);
                 
                 parsedData.teamNames.forEach(team => {
                     const option = document.createElement('option');
