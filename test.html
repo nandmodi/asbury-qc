@@ -379,12 +379,12 @@
             formData.append(entryIds.teamName, teamNameSelect.value);
             formData.append(entryIds.skuName, currentSku.name);
             formData.append(entryIds.skuId, currentSku.id);
-
-            // If no options are selected, append "Done" to the formData
+            
+            // If no options are selected, submit "Done" as the status
             if (selectedOptions.length === 0) {
                 formData.append(entryIds.issueOptions, "Done");
             } else {
-                // Otherwise, append the selected options
+                // Otherwise, submit all selected options
                 selectedOptions.forEach(option => {
                     formData.append(entryIds.issueOptions, option);
                 });
