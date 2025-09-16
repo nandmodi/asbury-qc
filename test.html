@@ -124,7 +124,7 @@
     const formResponseUrl =
       'https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/formResponse';
 
-    // Prefilled link (reference only)
+    // Reference (not used for submit)
     // https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/viewform?usp=pp_url&entry.1722677845=skuname&entry.1740050363=skuid&entry.462099554=teamid&entry.1537009712=Sequence&entry.1543570917=email
 
     // Entry IDs
@@ -136,17 +136,17 @@
       skuId: 'entry.1740050363'
     };
 
-    // If UI labels differ from Form choices, map here; otherwise values are passed as-is.
+    // Map UI labels to Form choices (if different). "Done" is auto-posted when nothing selected.
     const statusChoiceMap = {
       Sequence: 'Sequence',
       Tilt: 'Tilt',
       Issue: 'Issue',
       option1: 'Option 1',
       option2: 'Option 2'
-      // "Done" is posted only when nothing is selected (fallback below)
     };
 
     /***** STATE + UI REFS *****/
+    let parsedData = null;  // <-- keep parsed CSV globally
     let allSkus = [];
     let currentSkuIndex = 0;
 
@@ -184,9 +184,8 @@
 
     function parseCsv(csvText) {
       const lines = csvText.trim().split('\n');
-
-      // Robust split on commas outside quotes
       const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().toLowerCase());
+
       const idx = {
         skuId: headers.indexOf('ai.sku_id'),
         skuName: headers.indexOf('sku_name'),
@@ -200,7 +199,7 @@
       const dataLines = lines.slice(1);
       const skus = {};
       const teamNames = new Set();
-      const excludedStatuses = ['Tilt','Sequence','Issue'];
+      const excludedStatuses = ['Tilt', 'Sequence', 'Issue'];
 
       dataLines.forEach(line => {
         const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/^"|"$/g, ''));
@@ -210,39 +209,45 @@
 
         const sku_id = values[idx.skuId];
         const sku_name = values[idx.skuName];
-        const team_name = values[idx.teamName];
+        const team_name = values[idx.teamName]?.trim() || '';
         const image_category = values[idx.imageCategory];
         const output_image_url = values[idx.outputImageUrl];
         const frame_seq_no = values[idx.frameSeqNo];
 
+        if (team_name) teamNames.add(team_name);
+
         if (sku_id && sku_name && image_category && output_image_url) {
-          if (!skus[sku_id]) skus[sku_id] = { id: sku_id, name: sku_name, categories: {} };
-          if (!skus[sku_id].categories[image_category]) skus[sku_id].categories[image_category] = [];
+          if (!skus[sku_id]) {
+            skus[sku_id] = { id: sku_id, name: sku_name, teamName: team_name, categories: {} };
+          } else if (!skus[sku_id].teamName && team_name) {
+            skus[sku_id].teamName = team_name; // fill if missing
+          }
+          if (!skus[sku_id].categories[image_category]) {
+            skus[sku_id].categories[image_category] = [];
+          }
           skus[sku_id].categories[image_category].push({
             id: sku_id,
             url: output_image_url,
             sequenceNo: frame_seq_no ? parseInt(frame_seq_no, 10) : 0
           });
         }
-        if (team_name && team_name.trim() !== '') teamNames.add(team_name.trim());
       });
 
-      return { skus: Object.values(skus), teamNames: Array.from(teamNames) };
+      return { skus: Object.values(skus), teamNames: Array.from(teamNames).sort() };
     }
 
-    // Always place the page at the very top when showing a SKU
+    // Always jump to top when showing a SKU
     function scrollToTop() {
-      // cross-browser: set both element and window scroll
       document.documentElement.scrollTop = 0; // Chrome, Firefox, IE, Opera
       document.body.scrollTop = 0;            // Safari
-      window.scrollTo(0, 0);                  // general
+      window.scrollTo(0, 0);
     }
 
     function displayCurrentSku() {
-      scrollToTop(); // <<< ensure view is on top for each SKU
+      scrollToTop();
 
       if (currentSkuIndex >= allSkus.length) {
-        showModal('You have reviewed all available SKUs!');
+        showModal('You have reviewed all available SKUs for this team!');
         skuNameDisplay.textContent = 'All SKUs Reviewed';
         skuIdDisplay.textContent = '';
         imageDisplay.innerHTML = '';
@@ -287,13 +292,33 @@
     }
 
     /***** EVENTS *****/
+    // Apply team filter on login
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      showModal('Logging in and fetching data...');
-      setTimeout(() => modal.classList.add('hidden'), 400);
+      const selectedTeam = teamNameSelect.value?.trim();
+
+      if (!parsedData) {
+        showModal('Data not loaded yet. Please wait a moment and try again.');
+        return;
+      }
+
+      // Filter SKUs by exact team name
+      allSkus = parsedData.skus.filter(s => (s.teamName || '') === selectedTeam);
 
       loginView.classList.add('hidden');
       qcView.classList.remove('hidden');
+
+      if (allSkus.length === 0) {
+        skuNameDisplay.textContent = 'No SKUs';
+        skuIdDisplay.textContent = '';
+        imageDisplay.innerHTML = '';
+        submitBtn.disabled = true;
+        showModal(`No SKUs found for team: ${selectedTeam}`);
+        return;
+      }
+
+      submitBtn.disabled = false;
+      currentSkuIndex = 0;
       displayCurrentSku();
     });
 
@@ -319,7 +344,6 @@
       if (selectedValues.length === 0) {
         formData.append(entryIds.issueOptions, 'Done'); // must exist as a Form choice
       } else {
-        // append each chosen status (mapped if needed)
         selectedValues.forEach(v => {
           formData.append(entryIds.issueOptions, statusChoiceMap[v] ?? v);
         });
@@ -335,7 +359,7 @@
         // Treat opaque as success in no-cors mode
         if (response.ok || response.type === 'opaque') {
           currentSkuIndex++;
-          displayCurrentSku();  // will auto-scroll to top
+          displayCurrentSku();  // auto-scroll to top
         } else {
           showModal('Failed to submit data. Please try again.');
         }
@@ -363,10 +387,10 @@
       const csvText = await fetchCsvData();
       if (!csvText) return;
 
-      const parsed = parseCsv(csvText);
-      allSkus = parsed.skus;
+      parsedData = parseCsv(csvText);
 
-      parsed.teamNames.forEach(team => {
+      // Populate team dropdown
+      parsedData.teamNames.forEach(team => {
         const opt = document.createElement('option');
         opt.value = team;
         opt.textContent = team;
