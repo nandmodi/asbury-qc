@@ -1,101 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>QC Process</title>
-  <link rel="icon" href="https://spyne-prod-ai.s3.us-east-1.amazonaws.com/ai-dataset/2025/logo/unnamed.png" type="image/x-icon" />
+  <link rel="icon" href="https://spyne-prod-ai.s3.us-east-1.amazonaws.com/ai-dataset/2025/logo/unnamed.png" type="image/x-icon"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
-    :root {
-      --ring: rgba(59,130,246,.5);
-    }
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f3f4f6;
-      transition: background-color .3s ease;
-      padding: 2rem;
-    }
-    .card {
-      background-color: #fff;
-      border-radius: 1.5rem;
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05);
-      padding: 2.5rem;
-      margin-top: 2rem;
-      transition: transform .3s ease;
-    }
+    :root { --ring: rgba(59,130,246,.5); }
+    body { font-family: 'Inter', sans-serif; background: #f3f4f6; padding: 2rem; }
+    .card { background:#fff; border-radius:1.5rem; box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05); padding:2.5rem; margin-top:2rem; transition:transform .3s ease; }
     .card:hover { transform: translateY(-5px); }
-    .login-input {
-      width: 100%;
-      padding: .75rem;
-      border: 1px solid #d1d5db;
-      border-radius: .5rem;
-      font-size: 1rem;
-      transition: border-color .3s ease, box-shadow .3s ease;
-      background: #fff;
-    }
-    .login-input:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px var(--ring);
-    }
-    .btn-primary {
-      width: 100%;
-      padding: .75rem;
-      background-color: #3b82f6;
-      color: #fff;
-      border: none;
-      border-radius: .75rem;
-      font-size: 1.125rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background-color .2s ease, transform .05s ease;
-    }
-    .btn-primary:hover { background-color: #2563eb; }
-    .btn-primary:active { transform: scale(.98); }
-    .image-category-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #1f2937;
-      margin-top: 1.5rem;
-      margin-bottom: 1rem;
-      border-bottom: 2px solid #e5e7eb;
-      padding-bottom: .5rem;
-    }
-    .image-card {
-      position: relative;
-      border: 1px solid #e5e7eb;
-      border-radius: .75rem;
-      overflow: hidden;
-      background-color: #f9fafb;
-      transition: transform .2s ease, box-shadow .2s ease;
-    }
-    .image-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 5px 10px rgba(0,0,0,.1);
-    }
-    .image-card img {
-      width: 100%;
-      height: auto;
-      max-height: 250px;
-      object-fit: contain;
-      background: #fff;
-    }
-    .kbd {
-      border: 1px solid #e5e7eb;
-      border-bottom-width: 3px;
-      border-radius: .5rem;
-      padding: .1rem .4rem;
-      font-size: .75rem;
-      background: #f9fafb;
-      color: #374151;
-    }
+    .login-input { width:100%; padding:.75rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:1rem; transition:border-color .3s, box-shadow .3s; background:#fff; }
+    .login-input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px var(--ring); }
+    .btn-primary { width:100%; padding:.75rem; background:#3b82f6; color:#fff; border:none; border-radius:.75rem; font-size:1.125rem; font-weight:600; cursor:pointer; transition:background .2s, transform .05s; }
+    .btn-primary:hover { background:#2563eb; } .btn-primary:active{ transform:scale(.98); }
+    .image-category-title { font-size:1.25rem; font-weight:600; color:#1f2937; margin:1.5rem 0 1rem; border-bottom:2px solid #e5e7eb; padding-bottom:.5rem; }
+    .image-card { position:relative; border:1px solid #e5e7eb; border-radius:.75rem; overflow:hidden; background:#f9fafb; transition:transform .2s, box-shadow .2s; }
+    .image-card:hover { transform: translateY(-3px); box-shadow:0 5px 10px rgba(0,0,0,.1); }
+    .image-card img { width:100%; height:auto; max-height:250px; object-fit:contain; background:#fff; }
+    .kbd { border:1px solid #e5e7eb; border-bottom-width:3px; border-radius:.5rem; padding:.1rem .4rem; font-size:.75rem; background:#f9fafb; color:#374151; }
   </style>
 </head>
-
 <body class="bg-gray-100">
   <div id="app" class="mx-auto">
     <!-- Login View -->
@@ -112,14 +41,12 @@
             <option value="sumit.rana@spyne.ai">sumit.rana@spyne.ai</option>
           </select>
         </div>
-
         <div>
           <label for="team-name" class="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
           <select id="team-name" class="login-input" required>
             <!-- Populated from CSV -->
           </select>
         </div>
-
         <button type="submit" class="btn-primary">Login</button>
       </form>
     </div>
@@ -131,19 +58,18 @@
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-800" id="sku-name-display"></h1>
           <p class="text-base sm:text-lg text-gray-600" id="sku-id-display"></p>
         </div>
-
         <div class="text-sm text-gray-500 mb-2">
           Hotkeys:
           <span class="kbd">1</span> Sequence,
           <span class="kbd">2</span> Tilt,
           <span class="kbd">3</span> Issue,
-          <span class="kbd">4</span> Option&nbsp;1,
-          <span class="kbd">5</span> Option&nbsp;2,
+          <span class="kbd">4</span> Option 1,
+          <span class="kbd">5</span> Option 2,
           <span class="kbd">Enter</span> Submit
         </div>
       </div>
 
-      <!-- Full-width image display -->
+      <!-- Images -->
       <div id="image-display" class="space-y-6"></div>
 
       <div class="px-8 py-4 max-w-7xl mx-auto">
@@ -190,6 +116,7 @@
 
   <script>
     /***** CONFIG *****/
+    // CSV source for SKU + images
     const sheetUrl =
       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG8Kx21fGcA06IVjoAARb1L656dTEBbzxfuBTXCn1rqDfYiP1AQeXDaD9WolWVlCn1CLFVjdXEHZXU/pub?gid=0&single=true&output=csv';
 
@@ -197,23 +124,26 @@
     const formResponseUrl =
       'https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/formResponse';
 
-    // Match your Form entry IDs
+    // Optional reference: your prefilled view URL (for debugging only, not used for submit)
+    // https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/viewform?usp=pp_url&entry.1722677845=skuname&entry.1740050363=skuid&entry.462099554=teamid&entry.1537009712=Sequence&entry.1543570917=email
+
+    // Match your Form entry IDs (from the prefilled link you shared)
     const entryIds = {
       email: 'entry.1543570917',
       teamName: 'entry.462099554',
-      issueOptions: 'entry.1537009712', // "Status" field
+      issueOptions: 'entry.1537009712', // Status
       skuName: 'entry.1722677845',
       skuId: 'entry.1740050363'
     };
 
-    // If your checkbox values differ from the labels expected by the Form,
-    // map them here. Otherwise they’ll be sent as-is.
+    // If UI labels differ from Form choices, map here; otherwise values are passed as-is.
     const statusChoiceMap = {
       Sequence: 'Sequence',
       Tilt: 'Tilt',
       Issue: 'Issue',
       option1: 'Option 1',
       option2: 'Option 2'
+      // "Done" is posted only when nothing is selected (fallback below)
     };
 
     /***** STATE + UI REFS *****/
@@ -254,8 +184,9 @@
 
     function parseCsv(csvText) {
       const lines = csvText.trim().split('\n');
-      const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().toLowerCase());
 
+      // Robust split on commas outside quotes
+      const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().toLowerCase());
       const idx = {
         skuId: headers.indexOf('ai.sku_id'),
         skuName: headers.indexOf('sku_name'),
@@ -266,17 +197,10 @@
         frameSeqNo: headers.indexOf('frame_seq_no')
       };
 
-      // Basic header guards
-      for (const [k, v] of Object.entries(idx)) {
-        if (v === -1) {
-          console.warn(`Missing column: ${k}`);
-        }
-      }
-
       const dataLines = lines.slice(1);
       const skus = {};
       const teamNames = new Set();
-      const excludedStatuses = ['Tilt', 'Sequence', 'Issue'];
+      const excludedStatuses = ['Tilt','Sequence','Issue'];
 
       dataLines.forEach(line => {
         const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/^"|"$/g, ''));
@@ -292,19 +216,14 @@
         const frame_seq_no = values[idx.frameSeqNo];
 
         if (sku_id && sku_name && image_category && output_image_url) {
-          if (!skus[sku_id]) {
-            skus[sku_id] = { id: sku_id, name: sku_name, categories: {} };
-          }
-          if (!skus[sku_id].categories[image_category]) {
-            skus[sku_id].categories[image_category] = [];
-          }
+          if (!skus[sku_id]) skus[sku_id] = { id: sku_id, name: sku_name, categories: {} };
+          if (!skus[sku_id].categories[image_category]) skus[sku_id].categories[image_category] = [];
           skus[sku_id].categories[image_category].push({
             id: sku_id,
             url: output_image_url,
             sequenceNo: frame_seq_no ? parseInt(frame_seq_no, 10) : 0
           });
         }
-
         if (team_name && team_name.trim() !== '') teamNames.add(team_name.trim());
       });
 
@@ -330,31 +249,26 @@
       // reset checkboxes
       document.querySelectorAll('input[name="qc_option"]').forEach(cb => (cb.checked = false));
 
-      const orderedCategories = ['Exterior', 'Interior', 'Focus Shoot', 'Miscellaneous'];
-
+      const orderedCategories = ['Exterior','Interior','Focus Shoot','Miscellaneous'];
       orderedCategories.forEach(category => {
         if (!currentSku.categories[category]) return;
 
         const section = document.createElement('div');
         section.className = 'my-4';
-
         section.innerHTML = `<h2 class="image-category-title px-8 py-4 max-w-7xl mx-auto">${category}</h2>`;
 
         const grid = document.createElement('div');
         grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 px-8';
 
-        const sorted = currentSku.categories[category].sort((a, b) => a.sequenceNo - b.sequenceNo);
-
+        const sorted = currentSku.categories[category].sort((a,b) => a.sequenceNo - b.sequenceNo);
         sorted.forEach(image => {
-          grid.insertAdjacentHTML(
-            'beforeend',
-            `
+          grid.insertAdjacentHTML('beforeend', `
             <div class="image-card relative">
-              <span class="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs font-bold px-2 py-1 rounded-full">${image.sequenceNo}</span>
-              <img src="${image.url}" alt="SKU ${currentSku.id} - ${category}" onerror="this.onerror=null;this.src='https://placehold.co/400x300/e5e7eb/7f8c8d?text=Image+Not+Found';">
+              <span class="absolute top-2 left-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded-full">${image.sequenceNo}</span>
+              <img src="${image.url}" alt="SKU ${currentSku.id} - ${category}"
+                   onerror="this.onerror=null;this.src='https://placehold.co/400x300/e5e7eb/7f8c8d?text=Image+Not+Found';">
             </div>
-            `
-          );
+          `);
         });
 
         section.appendChild(grid);
@@ -366,7 +280,6 @@
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       showModal('Logging in and fetching data...');
-      // Hide modal quickly to keep flow snappy
       setTimeout(() => modal.classList.add('hidden'), 400);
 
       loginView.classList.add('hidden');
@@ -386,18 +299,17 @@
         document.querySelectorAll('input[name="qc_option"]:checked')
       ).map(cb => cb.value);
 
-      // build payload
       const formData = new URLSearchParams();
       formData.append(entryIds.email, emailSelect.value);
       formData.append(entryIds.teamName, teamNameSelect.value);
       formData.append(entryIds.skuName, currentSku.name || '');
       formData.append(entryIds.skuId, currentSku.id || '');
 
-      // If no option selected, mark Status = Done
+      // ✅ If nothing selected → set Status = "Done"
       if (selectedValues.length === 0) {
-        formData.append(entryIds.issueOptions, 'Done');
+        formData.append(entryIds.issueOptions, 'Done'); // must exist as a Form choice
       } else {
-        // Append each status using mapping (if any)
+        // append each chosen status (mapped if needed)
         selectedValues.forEach(v => {
           formData.append(entryIds.issueOptions, statusChoiceMap[v] ?? v);
         });
@@ -410,6 +322,7 @@
           mode: 'no-cors'
         });
 
+        // Treat opaque as success in no-cors mode
         if (response.ok || response.type === 'opaque') {
           currentSkuIndex++;
           displayCurrentSku();
@@ -425,7 +338,6 @@
     // Hotkeys
     document.addEventListener('keydown', (e) => {
       if (qcView.classList.contains('hidden')) return;
-
       switch (e.key) {
         case '1': document.querySelector('input[value="Sequence"]').click(); break;
         case '2': document.querySelector('input[value="Tilt"]').click(); break;
