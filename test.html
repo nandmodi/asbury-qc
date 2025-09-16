@@ -58,7 +58,15 @@
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-800" id="sku-name-display"></h1>
           <p class="text-base sm:text-lg text-gray-600" id="sku-id-display"></p>
         </div>
-       
+        <div class="text-sm text-gray-500 mb-2">
+          Hotkeys:
+          <span class="kbd">1</span> Sequence,
+          <span class="kbd">2</span> Tilt,
+          <span class="kbd">3</span> Issue,
+          <span class="kbd">4</span> Option 1,
+          <span class="kbd">5</span> Option 2,
+          <span class="kbd">Enter</span> Submit
+        </div>
       </div>
 
       <!-- Images -->
@@ -116,10 +124,10 @@
     const formResponseUrl =
       'https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/formResponse';
 
-    // Optional reference: your prefilled view URL (for debugging only, not used for submit)
+    // Prefilled link (reference only)
     // https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/viewform?usp=pp_url&entry.1722677845=skuname&entry.1740050363=skuid&entry.462099554=teamid&entry.1537009712=Sequence&entry.1543570917=email
 
-    // Match your Form entry IDs (from the prefilled link you shared)
+    // Entry IDs
     const entryIds = {
       email: 'entry.1543570917',
       teamName: 'entry.462099554',
@@ -222,7 +230,17 @@
       return { skus: Object.values(skus), teamNames: Array.from(teamNames) };
     }
 
+    // Always place the page at the very top when showing a SKU
+    function scrollToTop() {
+      // cross-browser: set both element and window scroll
+      document.documentElement.scrollTop = 0; // Chrome, Firefox, IE, Opera
+      document.body.scrollTop = 0;            // Safari
+      window.scrollTo(0, 0);                  // general
+    }
+
     function displayCurrentSku() {
+      scrollToTop(); // <<< ensure view is on top for each SKU
+
       if (currentSkuIndex >= allSkus.length) {
         showModal('You have reviewed all available SKUs!');
         skuNameDisplay.textContent = 'All SKUs Reviewed';
@@ -297,7 +315,7 @@
       formData.append(entryIds.skuName, currentSku.name || '');
       formData.append(entryIds.skuId, currentSku.id || '');
 
-      // ✅ If nothing selected → set Status = "Done"
+      // If nothing selected → set Status = "Done"
       if (selectedValues.length === 0) {
         formData.append(entryIds.issueOptions, 'Done'); // must exist as a Form choice
       } else {
@@ -317,7 +335,7 @@
         // Treat opaque as success in no-cors mode
         if (response.ok || response.type === 'opaque') {
           currentSkuIndex++;
-          displayCurrentSku();
+          displayCurrentSku();  // will auto-scroll to top
         } else {
           showModal('Failed to submit data. Please try again.');
         }
