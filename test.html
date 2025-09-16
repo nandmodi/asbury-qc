@@ -373,8 +373,7 @@
             }
             
             console.log("Submitting the following data:", Object.fromEntries(formData.entries()));
-            showModal("Submitting QC data...");
-
+            
             try {
                 const response = await fetch(formResponseUrl, {
                     method: 'POST',
@@ -383,7 +382,6 @@
                 });
 
                 if (response.ok || response.type === 'opaque') {
-                    showModal("QC data submitted successfully. Loading next SKU...");
                     currentSkuIndex++;
                     displayCurrentSku();
                 } else {
