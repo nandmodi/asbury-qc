@@ -14,7 +14,6 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
             transition: background-color 0.3s ease;
-            /* Using a consistent padding for the whole body */
             padding: 2rem;
         }
         .card {
@@ -68,6 +67,7 @@
             padding-bottom: 0.5rem;
         }
         .image-card {
+            position: relative;
             border: 1px solid #e5e7eb;
             border-radius: 0.75rem;
             overflow: hidden;
@@ -229,7 +229,6 @@
         function parseCsv(csvText) {
             const lines = csvText.trim().split('\n');
             
-            // Use a flexible regex to split while preserving content within quotes and trim spaces from headers
             const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().toLowerCase());
             console.log("Parsed headers:", headers);
             
@@ -240,9 +239,10 @@
             const teamNameIndex = headers.indexOf('team_name');
             const imageCategoryIndex = headers.indexOf('image_category');
             const outputImageUrlIndex = headers.indexOf('output_image_hres_url');
-            const statusIndex = headers.indexOf('status'); // Get the index for the 'Status' column
+            const statusIndex = headers.indexOf('status');
+            const frameSeqNoIndex = headers.indexOf('frame_seq_no');
 
-            if (skuIdIndex === -1 || skuNameIndex === -1 || teamNameIndex === -1 || imageCategoryIndex === -1 || outputImageUrlIndex === -1 || statusIndex === -1) {
+            if (skuIdIndex === -1 || skuNameIndex === -1 || teamNameIndex === -1 || imageCategoryIndex === -1 || outputImageUrlIndex === -1 || statusIndex === -1 || frameSeqNoIndex === -1) {
                 console.error("Missing required headers in CSV.");
                 return { skus: [], teamNames: [] };
             }
@@ -257,7 +257,6 @@
                 const excludedStatuses = ["Tilt", "Sequence", "Issue"];
 
                 if (excludedStatuses.includes(status)) {
-                    // Skip this line if the status is one of the excluded values
                     return;
                 }
 
@@ -266,6 +265,7 @@
                 const team_name = values[teamNameIndex];
                 const image_category = values[imageCategoryIndex];
                 const output_image_url = values[outputImageUrlIndex];
+                const frame_seq_no = values[frameSeqNoIndex];
 
                 if (sku_id && sku_name && image_category && output_image_url) {
                     if (!skus[sku_id]) {
@@ -280,7 +280,8 @@
                     }
                     skus[sku_id].categories[image_category].push({
                         id: sku_id,
-                        url: output_image_url
+                        url: output_image_url,
+                        sequenceNo: frame_seq_no ? parseInt(frame_seq_no, 10) : 0
                     });
                 }
                 if (team_name && team_name.trim() !== '') {
@@ -308,10 +309,8 @@
             
             document.querySelectorAll('input[name="qc_option"]').forEach(cb => cb.checked = false);
 
-            // Define the specific order for image categories
             const orderedCategories = ['Exterior', 'Interior', 'Focus Shoot', 'Miscellaneous'];
 
-            // Loop through the ordered list of categories to ensure consistent display
             orderedCategories.forEach(category => {
                 if (currentSku.categories[category]) {
                     const categorySection = document.createElement('div');
@@ -321,9 +320,13 @@
                     const grid = document.createElement('div');
                     grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 px-8';
                     
-                    currentSku.categories[category].forEach(image => {
+                    // Sort images by sequence number in ascending order
+                    const sortedImages = currentSku.categories[category].sort((a, b) => a.sequenceNo - b.sequenceNo);
+
+                    sortedImages.forEach(image => {
                         const imageCard = `
-                            <div class="image-card">
+                            <div class="image-card relative">
+                                <span class="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs font-bold px-2 py-1 rounded-full">${image.sequenceNo}</span>
                                 <img src="${image.url}" alt="Image ID: ${image.id}" class="w-full h-auto max-h-64 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x300/e5e7eb/7f8c8d?text=Image+Not+Found';">
                             </div>
                         `;
@@ -377,7 +380,6 @@
                 formData.append(entryIds.issueOptions, option);
             });
 
-            // Explicitly append "Option 1" and "Option 2" if they are checked
             if (selectedOptions.includes("option1")) {
                 formData.append(entryIds.issueOptions, "Option 1");
             }
