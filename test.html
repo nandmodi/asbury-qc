@@ -14,10 +14,7 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
             transition: background-color 0.3s ease;
-        }
-        .container {
-            max-width: 100%;
-            margin: auto;
+            /* Using a consistent padding for the whole body */
             padding: 2rem;
         }
         .card {
@@ -81,9 +78,11 @@
             transform: translateY(-3px);
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
         }
+        /* Updated image styling to be responsive */
         .image-card img {
             width: 100%;
-            height: 180px;
+            height: auto;
+            max-height: 250px;
             object-fit: contain;
         }
         .image-title {
@@ -91,10 +90,10 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 p-8">
+<body class="bg-gray-100">
 
-    <!-- Main Container -->
-    <div id="app" class="container mx-auto">
+    <!-- Main Container. Removed 'container' class to allow for full-width sections -->
+    <div id="app" class="mx-auto">
 
         <!-- Login View -->
         <div id="login-view" class="card max-w-md mx-auto">
@@ -119,40 +118,47 @@
 
         <!-- QC View -->
         <div id="qc-view" class="hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-3xl font-bold text-gray-800" id="sku-name-display"></h1>
-                <p class="text-lg text-gray-600" id="sku-id-display"></p>
+            <!-- Non-image content stays within a central container -->
+            <div class="px-8 py-4 max-w-7xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-gray-800" id="sku-name-display"></h1>
+                    <p class="text-lg text-gray-600" id="sku-id-display"></p>
+                </div>
             </div>
             
+            <!-- Image display section is now full-width -->
             <div id="image-display" class="space-y-6">
                 <!-- Images will be dynamically inserted here -->
             </div>
 
-            <div class="card mt-8 flex flex-col items-center">
-                <div class="flex flex-wrap justify-center gap-6 mb-8">
-                    <label class="flex items-center text-gray-700 font-medium">
-                        <input type="checkbox" name="qc_option" value="Sequence" class="h-5 w-5 rounded-md text-blue-600">
-                        <span class="ml-2">Sequence</span>
-                    </label>
-                    <label class="flex items-center text-gray-700 font-medium">
-                        <input type="checkbox" name="qc_option" value="Tilt" class="h-5 w-5 rounded-md text-blue-600">
-                        <span class="ml-2">Tilt</span>
-                    </label>
-                    <label class="flex items-center text-gray-700 font-medium">
-                        <input type="checkbox" name="qc_option" value="Issue" class="h-5 w-5 rounded-md text-blue-600">
-                        <span class="ml-2">Issue</span>
-                    </label>
-                    <label class="flex items-center text-gray-700 font-medium">
-                        <input type="checkbox" name="qc_option" value="option1" class="h-5 w-5 rounded-md text-blue-600">
-                        <span class="ml-2">Option 1</span>
-                    </label>
-                    <label class="flex items-center text-gray-700 font-medium">
-                        <input type="checkbox" name="qc_option" value="option2" class="h-5 w-5 rounded-md text-blue-600">
-                        <span class="ml-2">Option 2</span>
-                    </label>
-                </div>
+            <!-- Non-image content stays within a central container -->
+            <div class="px-8 py-4 max-w-7xl mx-auto">
+                <div class="card mt-8 flex flex-col items-center">
+                    <div class="flex flex-wrap justify-center gap-6 mb-8">
+                        <label class="flex items-center text-gray-700 font-medium">
+                            <input type="checkbox" name="qc_option" value="Sequence" class="h-5 w-5 rounded-md text-blue-600">
+                            <span class="ml-2">Sequence</span>
+                        </label>
+                        <label class="flex items-center text-gray-700 font-medium">
+                            <input type="checkbox" name="qc_option" value="Tilt" class="h-5 w-5 rounded-md text-blue-600">
+                            <span class="ml-2">Tilt</span>
+                        </label>
+                        <label class="flex items-center text-gray-700 font-medium">
+                            <input type="checkbox" name="qc_option" value="Issue" class="h-5 w-5 rounded-md text-blue-600">
+                            <span class="ml-2">Issue</span>
+                        </label>
+                        <label class="flex items-center text-gray-700 font-medium">
+                            <input type="checkbox" name="qc_option" value="option1" class="h-5 w-5 rounded-md text-blue-600">
+                            <span class="ml-2">Option 1</span>
+                        </label>
+                        <label class="flex items-center text-gray-700 font-medium">
+                            <input type="checkbox" name="qc_option" value="option2" class="h-5 w-5 rounded-md text-blue-600">
+                            <span class="ml-2">Option 2</span>
+                        </label>
+                    </div>
 
-                <button id="submit-btn" class="btn-primary w-64">Submit</button>
+                    <button id="submit-btn" class="btn-primary w-64">Submit</button>
+                </div>
             </div>
         </div>
 
@@ -297,11 +303,11 @@
             for (const category in currentSku.categories) {
                 const categorySection = document.createElement('div');
                 categorySection.className = 'my-4';
-                categorySection.innerHTML = `<h2 class="image-category-title">${category}</h2>`;
+                categorySection.innerHTML = `<h2 class="image-category-title px-8 py-4 max-w-7xl mx-auto">${category}</h2>`;
                 
-                // This line was changed to ensure a 4-column grid on all screens
+                // This line was changed to ensure a responsive 4-column grid
                 const grid = document.createElement('div');
-                grid.className = 'grid grid-cols-4 gap-4';
+                grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 px-8';
                 
                 currentSku.categories[category].forEach(image => {
                     const imageCard = `
