@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QC Process</title>
+    <link rel="icon" href="https://spyne-prod-ai.s3.us-east-1.amazonaws.com/ai-dataset/2025/logo/unnamed.png" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            transition: background-color 0.3s ease;
+        }
+        .container {
+            max-width: 100%;
+            margin: auto;
+            padding: 2rem;
+        }
+        .card {
+            background-color: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2.5rem;
+            margin-top: 2rem;
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .login-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .login-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.125rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        .image-category-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+        .image-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background-color: #f9fafb;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .image-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        }
+        .image-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: contain;
+        }
+        .image-title {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+
+    <!-- Main Container -->
+    <div id="app" class="container mx-auto">
+
+        <!-- Login View -->
+        <div id="login-view" class="card max-w-md mx-auto">
+            <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">QC Login</h1>
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <select id="email" class="login-input" required>
+                        <option value="shweta.gupta@spyne.co.in">shweta.gupta@spyne.co.in</option>
+                        <option value="abhishek.kumar@spyne.ai">abhishek.kumar@spyne.ai</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="team-name" class="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
+                    <select id="team-name" class="login-input" required>
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+        </div>
+
+        <!-- QC View -->
+        <div id="qc-view" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800" id="sku-name-display"></h1>
+                <p class="text-lg text-gray-600" id="sku-id-display"></p>
+            </div>
+            
+            <div id="image-display" class="space-y-6">
+                <!-- Images will be dynamically inserted here -->
+            </div>
+
+            <div class="card mt-8 flex flex-col items-center">
+                <div class="flex flex-wrap justify-center gap-6 mb-8">
+                    <label class="flex items-center text-gray-700 font-medium">
+                        <input type="checkbox" name="qc_option" value="Sequence" class="h-5 w-5 rounded-md text-blue-600">
+                        <span class="ml-2">Sequence</span>
+                    </label>
+                    <label class="flex items-center text-gray-700 font-medium">
+                        <input type="checkbox" name="qc_option" value="Tilt" class="h-5 w-5 rounded-md text-blue-600">
+                        <span class="ml-2">Tilt</span>
+                    </label>
+                    <label class="flex items-center text-gray-700 font-medium">
+                        <input type="checkbox" name="qc_option" value="Issue" class="h-5 w-5 rounded-md text-blue-600">
+                        <span class="ml-2">Issue</span>
+                    </label>
+                    <label class="flex items-center text-gray-700 font-medium">
+                        <input type="checkbox" name="qc_option" value="option1" class="h-5 w-5 rounded-md text-blue-600">
+                        <span class="ml-2">Option 1</span>
+                    </label>
+                    <label class="flex items-center text-gray-700 font-medium">
+                        <input type="checkbox" name="qc_option" value="option2" class="h-5 w-5 rounded-md text-blue-600">
+                        <span class="ml-2">Option 2</span>
+                    </label>
+                </div>
+
+                <button id="submit-btn" class="btn-primary w-64">Submit</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal for messages -->
+    <div id="modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+            <p id="modal-message" class="text-gray-800 text-lg"></p>
+            <button id="modal-close-btn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG8Kx21fGcA06IVjoAARb1L656dTEBbzxfuBTXCn1rqDfYiP1AQeXDaD9WolWVlCn1CLFVjdXEHZXU/pub?gid=0&single=true&output=csv';
+        let allSkus = [];
+        let currentSkuIndex = 0;
+
+        // Google Form submission URL
+        const formResponseUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/formResponse';
+        
+        // Correct entry IDs based on the prefilled form URL provided
+        const entryIds = {
+            email: 'entry.1543570917',
+            teamName: 'entry.462099554',
+            issueOptions: 'entry.1537009712',
+            skuName: 'entry.1722677845',
+            skuId: 'entry.1740050363'
+        };
+
+        // UI element references
+        const loginView = document.getElementById('login-view');
+        const qcView = document.getElementById('qc-view');
+        const loginForm = document.getElementById('login-form');
+        const emailSelect = document.getElementById('email');
+        const teamNameSelect = document.getElementById('team-name');
+        const skuNameDisplay = document.getElementById('sku-name-display');
+        const skuIdDisplay = document.getElementById('sku-id-display');
+        const imageDisplay = document.getElementById('image-display');
+        const submitBtn = document.getElementById('submit-btn');
+        const modal = document.getElementById('modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        // Function to show a modal message instead of alert()
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.classList.remove('hidden');
+        }
+
+        modalCloseBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+
+        // Function to fetch and parse the CSV data
+        async function fetchCsvData() {
+            try {
+                const response = await fetch(sheetUrl);
+                const text = await response.text();
+                return text;
+            } catch (error) {
+                console.error("Error fetching CSV data:", error);
+                showModal("Failed to load data. Please check the network connection.");
+                return null;
+            }
+        }
+
+        function parseCsv(csvText) {
+            const lines = csvText.trim().split('\n');
+            
+            // Use a flexible regex to split while preserving content within quotes and trim spaces from headers
+            const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().toLowerCase());
+            console.log("Parsed headers:", headers); // Diagnostic log
+            
+            const dataLines = lines.slice(1);
+            
+            const skuIdIndex = headers.indexOf('ai.sku_id');
+            const skuNameIndex = headers.indexOf('sku_name');
+            const teamNameIndex = headers.indexOf('team_name');
+            const imageCategoryIndex = headers.indexOf('image_category');
+            const outputImageUrlIndex = headers.indexOf('output_image_hres_url'); // Corrected header name
+            
+            if (skuIdIndex === -1 || skuNameIndex === -1 || teamNameIndex === -1 || imageCategoryIndex === -1 || outputImageUrlIndex === -1) {
+                console.error("Missing required headers in CSV.");
+                return { skus: [], teamNames: [] };
+            }
+
+            const skus = {};
+            const teamNames = new Set();
+            
+            dataLines.forEach(line => {
+                // Use the same robust splitting method for data lines
+                const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/^"|"$/g, ''));
+                
+                const sku_id = values[skuIdIndex];
+                const sku_name = values[skuNameIndex];
+                const team_name = values[teamNameIndex];
+                const image_category = values[imageCategoryIndex];
+                const output_image_url = values[outputImageUrlIndex];
+
+                if (sku_id && sku_name && image_category && output_image_url) {
+                    if (!skus[sku_id]) {
+                        skus[sku_id] = {
+                            id: sku_id,
+                            name: sku_name,
+                            categories: {}
+                        };
+                    }
+                    if (!skus[sku_id].categories[image_category]) {
+                        skus[sku_id].categories[image_category] = [];
+                    }
+                    skus[sku_id].categories[image_category].push({
+                        id: sku_id,
+                        url: output_image_url
+                    });
+                }
+                if (team_name && team_name.trim() !== '') {
+                    teamNames.add(team_name.trim());
+                }
+            });
+
+            return { skus: Object.values(skus), teamNames: Array.from(teamNames) };
+        }
+
+        function displayCurrentSku() {
+            if (currentSkuIndex >= allSkus.length) {
+                showModal("You have reviewed all available SKUs!");
+                skuNameDisplay.textContent = "All SKUs Reviewed";
+                skuIdDisplay.textContent = "";
+                imageDisplay.innerHTML = "";
+                submitBtn.disabled = true;
+                return;
+            }
+
+            const currentSku = allSkus[currentSkuIndex];
+            skuNameDisplay.textContent = currentSku.name || "N/A";
+            skuIdDisplay.textContent = `SKU ID: ${currentSku.id}`;
+            imageDisplay.innerHTML = '';
+            
+            document.querySelectorAll('input[name="qc_option"]').forEach(cb => cb.checked = false);
+
+            for (const category in currentSku.categories) {
+                const categorySection = document.createElement('div');
+                categorySection.className = 'my-4';
+                categorySection.innerHTML = `<h2 class="image-category-title">${category}</h2>`;
+                
+                // This line was changed to ensure a 4-column grid on all screens
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-4 gap-4';
+                
+                currentSku.categories[category].forEach(image => {
+                    const imageCard = `
+                        <div class="image-card">
+                            <img src="${image.url}" alt="Image ID: ${image.id}" class="w-full h-auto max-h-64 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x300/e5e7eb/7f8c8d?text=Image+Not+Found';">
+                        </div>
+                    `;
+                    grid.innerHTML += imageCard;
+                });
+                
+                categorySection.appendChild(grid);
+                imageDisplay.appendChild(categorySection);
+            }
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            showModal("Logging in and fetching data...");
+            
+            modal.classList.add('hidden');
+            loginView.classList.add('hidden');
+            qcView.classList.remove('hidden');
+            displayCurrentSku();
+        });
+        
+        (async function init() {
+            const csvText = await fetchCsvData();
+            if (csvText) {
+                const parsedData = parseCsv(csvText);
+                allSkus = parsedData.skus;
+                console.log("Parsed SKUs:", allSkus); // Diagnostic log
+                
+                parsedData.teamNames.forEach(team => {
+                    const option = document.createElement('option');
+                    option.value = team;
+                    option.textContent = team;
+                    teamNameSelect.appendChild(option);
+                });
+            }
+        })();
+
+        submitBtn.addEventListener('click', async () => {
+            const currentSku = allSkus[currentSkuIndex];
+            const selectedOptions = Array.from(document.querySelectorAll('input[name="qc_option"]:checked'))
+                                       .map(cb => cb.value);
+            
+            const formData = new URLSearchParams();
+            formData.append(entryIds.email, emailSelect.value);
+            formData.append(entryIds.teamName, teamNameSelect.value);
+            formData.append(entryIds.skuName, currentSku.name);
+            formData.append(entryIds.skuId, currentSku.id);
+            selectedOptions.forEach(option => {
+                formData.append(entryIds.issueOptions, option);
+            });
+
+            // Explicitly append "Option 1" and "Option 2" if they are checked
+            if (selectedOptions.includes("option1")) {
+                formData.append(entryIds.issueOptions, "Option 1");
+            }
+            if (selectedOptions.includes("option2")) {
+                formData.append(entryIds.issueOptions, "Option 2");
+            }
+            
+            console.log("Submitting the following data:", Object.fromEntries(formData.entries()));
+            showModal("Submitting QC data...");
+
+            try {
+                const response = await fetch(formResponseUrl, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'no-cors'
+                });
+
+                if (response.ok || response.type === 'opaque') {
+                    showModal("QC data submitted successfully. Loading next SKU...");
+                    currentSkuIndex++;
+                    displayCurrentSku();
+                } else {
+                    showModal("Failed to submit data. Please try again.");
+                }
+            } catch (error) {
+                console.error("Submission error:", error);
+                showModal("An error occurred during submission. Please try again.");
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (qcView.classList.contains('hidden')) {
+                return;
+            }
+
+            switch (e.key) {
+                case '1':
+                    document.querySelector('input[value="Sequence"]').click();
+                    break;
+                case '2':
+                    document.querySelector('input[value="Tilt"]').click();
+                    break;
+                case '3':
+                    document.querySelector('input[value="Issue"]').click();
+                    break;
+                case '4':
+                    document.querySelector('input[value="option1"]').click();
+                    break;
+                case '5':
+                    document.querySelector('input[value="option2"]').click();
+                    break;
+                case 'Enter':
+                    submitBtn.click();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
