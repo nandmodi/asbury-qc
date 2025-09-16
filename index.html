@@ -158,6 +158,14 @@
 
     </div>
 
+    <!-- Modal for messages -->
+    <div id="modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+            <p id="modal-message" class="text-gray-800 text-lg"></p>
+            <button id="modal-close-btn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">OK</button>
+        </div>
+    </div>
+
     <script>
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG8Kx21fGcA06IVjoAARb1L656dTEBbzxfuBTXCn1rqDfYiP1AQeXDaD9WolWVlCn1CLFVjdXEHZXU/pub?gid=0&single=true&output=csv';
         let allSkus = [];
@@ -166,7 +174,7 @@
         // Google Form submission URL
         const formResponseUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/formResponse';
         
-        // Correct entry IDs based on the prefilled form URL
+        // Correct entry IDs based on the prefilled form URL provided
         const entryIds = {
             email: 'entry.1543570917',
             teamName: 'entry.462099554',
@@ -185,6 +193,19 @@
         const skuIdDisplay = document.getElementById('sku-id-display');
         const imageDisplay = document.getElementById('image-display');
         const submitBtn = document.getElementById('submit-btn');
+        const modal = document.getElementById('modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        // Function to show a modal message instead of alert()
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.classList.remove('hidden');
+        }
+
+        modalCloseBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
 
         // Function to fetch and parse the CSV data
         async function fetchCsvData() {
@@ -194,20 +215,45 @@
                 return text;
             } catch (error) {
                 console.error("Error fetching CSV data:", error);
-                // No modal, so just log the error
+                showModal("Failed to load data. Please check the network connection.");
                 return null;
             }
         }
 
         function parseCsv(csvText) {
-            const lines = csvText.trim().split('\n').slice(1); // Split by line, skip header
+            const lines = csvText.trim().split('\n');
+            
+            // Use a flexible regex to split while preserving content within quotes and trim spaces from headers
+            const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().toLowerCase());
+            console.log("Parsed headers:", headers); // Diagnostic log
+            
+            const dataLines = lines.slice(1);
+            
+            const skuIdIndex = headers.indexOf('ai.sku_id');
+            const skuNameIndex = headers.indexOf('sku_name');
+            const teamNameIndex = headers.indexOf('team_name');
+            const imageCategoryIndex = headers.indexOf('image_category');
+            const outputImageUrlIndex = headers.indexOf('output_image_hres_url'); // Corrected header name
+            
+            if (skuIdIndex === -1 || skuNameIndex === -1 || teamNameIndex === -1 || imageCategoryIndex === -1 || outputImageUrlIndex === -1) {
+                console.error("Missing required headers in CSV.");
+                return { skus: [], teamNames: [] };
+            }
+
             const skus = {};
             const teamNames = new Set();
+            
+            dataLines.forEach(line => {
+                // Use the same robust splitting method for data lines
+                const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/^"|"$/g, ''));
+                
+                const sku_id = values[skuIdIndex];
+                const sku_name = values[skuNameIndex];
+                const team_name = values[teamNameIndex];
+                const image_category = values[imageCategoryIndex];
+                const output_image_url = values[outputImageUrlIndex];
 
-            lines.forEach(line => {
-                const [created_on, enterprise_name, sku_id, image_id, sku_name, project_id, input_image_url, output_image_url, team_name, image_category] = line.split(',');
-
-                if (sku_id && image_id && sku_name && image_category) {
+                if (sku_id && sku_name && image_category && output_image_url) {
                     if (!skus[sku_id]) {
                         skus[sku_id] = {
                             id: sku_id,
@@ -218,9 +264,8 @@
                     if (!skus[sku_id].categories[image_category]) {
                         skus[sku_id].categories[image_category] = [];
                     }
-                    // Use output_image_url as per the UI/UX requirement
                     skus[sku_id].categories[image_category].push({
-                        id: image_id,
+                        id: sku_id,
                         url: output_image_url
                     });
                 }
@@ -228,11 +273,13 @@
                     teamNames.add(team_name.trim());
                 }
             });
+
             return { skus: Object.values(skus), teamNames: Array.from(teamNames) };
         }
 
         function displayCurrentSku() {
             if (currentSkuIndex >= allSkus.length) {
+                showModal("You have reviewed all available SKUs!");
                 skuNameDisplay.textContent = "All SKUs Reviewed";
                 skuIdDisplay.textContent = "";
                 imageDisplay.innerHTML = "";
@@ -245,7 +292,6 @@
             skuIdDisplay.textContent = `SKU ID: ${currentSku.id}`;
             imageDisplay.innerHTML = '';
             
-            // Clear previous checkboxes
             document.querySelectorAll('input[name="qc_option"]').forEach(cb => cb.checked = false);
 
             for (const category in currentSku.categories) {
@@ -259,7 +305,7 @@
                 currentSku.categories[category].forEach(image => {
                     const imageCard = `
                         <div class="image-card">
-                            <img src="${image.url}" alt="Image ID: ${image.id}" class="w-full h-48 object-contain">
+                            <img src="${image.url}" alt="Image ID: ${image.id}" class="w-full h-48 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x300/e5e7eb/7f8c8d?text=Image+Not+Found';">
                         </div>
                     `;
                     grid.innerHTML += imageCard;
@@ -270,23 +316,24 @@
             }
         }
 
-        // Handle login form submission
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            showModal("Logging in and fetching data...");
+            
+            modal.classList.add('hidden');
             loginView.classList.add('hidden');
             qcView.classList.remove('hidden');
             displayCurrentSku();
         });
         
-        // Initial data fetch to populate team names
         (async function init() {
             const csvText = await fetchCsvData();
             if (csvText) {
                 const parsedData = parseCsv(csvText);
                 allSkus = parsedData.skus;
+                console.log("Parsed SKUs:", allSkus); // Diagnostic log
                 
-                // Populate the team name dropdown
                 parsedData.teamNames.forEach(team => {
                     const option = document.createElement('option');
                     option.value = team;
@@ -296,13 +343,11 @@
             }
         })();
 
-        // Handle submission of QC data
         submitBtn.addEventListener('click', async () => {
             const currentSku = allSkus[currentSkuIndex];
             const selectedOptions = Array.from(document.querySelectorAll('input[name="qc_option"]:checked'))
                                        .map(cb => cb.value);
             
-            // Prepare the data to be sent
             const formData = new URLSearchParams();
             formData.append(entryIds.email, emailSelect.value);
             formData.append(entryIds.teamName, teamNameSelect.value);
@@ -311,36 +356,43 @@
             selectedOptions.forEach(option => {
                 formData.append(entryIds.issueOptions, option);
             });
+
+            // Explicitly append "Option 1" and "Option 2" if they are checked
+            if (selectedOptions.includes("option1")) {
+                formData.append(entryIds.issueOptions, "Option 1");
+            }
+            if (selectedOptions.includes("option2")) {
+                formData.append(entryIds.issueOptions, "Option 2");
+            }
             
             console.log("Submitting the following data:", Object.fromEntries(formData.entries()));
+            showModal("Submitting QC data...");
 
             try {
                 const response = await fetch(formResponseUrl, {
                     method: 'POST',
                     body: formData,
-                    mode: 'no-cors' // Use 'no-cors' mode
+                    mode: 'no-cors'
                 });
 
-                if (response.ok || response.type === 'opaque') { // Check for 'opaque' response in no-cors mode
-                    console.log("QC data submitted successfully. Loading next SKU...");
+                if (response.ok || response.type === 'opaque') {
+                    showModal("QC data submitted successfully. Loading next SKU...");
                     currentSkuIndex++;
                     displayCurrentSku();
                 } else {
-                    console.error("Failed to submit data. Please try again.");
+                    showModal("Failed to submit data. Please try again.");
                 }
             } catch (error) {
-                console.error("An error occurred during submission:", error);
+                console.error("Submission error:", error);
+                showModal("An error occurred during submission. Please try again.");
             }
         });
 
-        // Add keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            // Only enable shortcuts on the QC view and if the user is not typing in the comments box
             if (qcView.classList.contains('hidden')) {
                 return;
             }
 
-            // Check for number keys to toggle checkboxes
             switch (e.key) {
                 case '1':
                     document.querySelector('input[value="Sequence"]').click();
