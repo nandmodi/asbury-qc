@@ -55,18 +55,13 @@
     <div id="qc-view" class="hidden">
       <div class="px-8 py-4 max-w-7xl mx-auto">
         <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-3">
-          <h1 class="text-2xl sm:text-3xl font-bold text-gray-800" id="sku-name-display"></h1>
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800" id="sku-name-display"></h1>
+            <p class="text-sm text-gray-600" id="team-name-display"></p>
+          </div>
           <p class="text-base sm:text-lg text-gray-600" id="sku-id-display"></p>
         </div>
-        <div class="text-sm text-gray-500 mb-2">
-          Hotkeys:
-          <span class="kbd">1</span> Sequence,
-          <span class="kbd">2</span> Tilt,
-          <span class="kbd">3</span> Issue,
-          <span class="kbd">4</span> Option 1,
-          <span class="kbd">5</span> Option 2,
-          <span class="kbd">Enter</span> Submit
-        </div>
+       
       </div>
 
       <!-- Images -->
@@ -116,18 +111,15 @@
 
   <script>
     /***** CONFIG *****/
-    // CSV source for SKU + images
     const sheetUrl =
       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG8Kx21fGcA06IVjoAARb1L656dTEBbzxfuBTXCn1rqDfYiP1AQeXDaD9WolWVlCn1CLFVjdXEHZXU/pub?gid=0&single=true&output=csv';
 
-    // Google Form POST endpoint
     const formResponseUrl =
       'https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/formResponse';
 
-    // Reference (not used for submit)
+    // Prefilled (reference):
     // https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/viewform?usp=pp_url&entry.1722677845=skuname&entry.1740050363=skuid&entry.462099554=teamid&entry.1537009712=Sequence&entry.1543570917=email
 
-    // Entry IDs
     const entryIds = {
       email: 'entry.1543570917',
       teamName: 'entry.462099554',
@@ -136,7 +128,6 @@
       skuId: 'entry.1740050363'
     };
 
-    // Map UI labels to Form choices (if different). "Done" is auto-posted when nothing selected.
     const statusChoiceMap = {
       Sequence: 'Sequence',
       Tilt: 'Tilt',
@@ -146,7 +137,7 @@
     };
 
     /***** STATE + UI REFS *****/
-    let parsedData = null;  // <-- keep parsed CSV globally
+    let parsedData = null;
     let allSkus = [];
     let currentSkuIndex = 0;
 
@@ -156,6 +147,7 @@
     const emailSelect = document.getElementById('email');
     const teamNameSelect = document.getElementById('team-name');
     const skuNameDisplay = document.getElementById('sku-name-display');
+    const teamNameDisplay = document.getElementById('team-name-display');
     const skuIdDisplay = document.getElementById('sku-id-display');
     const imageDisplay = document.getElementById('image-display');
     const submitBtn = document.getElementById('submit-btn');
@@ -220,7 +212,7 @@
           if (!skus[sku_id]) {
             skus[sku_id] = { id: sku_id, name: sku_name, teamName: team_name, categories: {} };
           } else if (!skus[sku_id].teamName && team_name) {
-            skus[sku_id].teamName = team_name; // fill if missing
+            skus[sku_id].teamName = team_name;
           }
           if (!skus[sku_id].categories[image_category]) {
             skus[sku_id].categories[image_category] = [];
@@ -236,10 +228,9 @@
       return { skus: Object.values(skus), teamNames: Array.from(teamNames).sort() };
     }
 
-    // Always jump to top when showing a SKU
     function scrollToTop() {
-      document.documentElement.scrollTop = 0; // Chrome, Firefox, IE, Opera
-      document.body.scrollTop = 0;            // Safari
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
       window.scrollTo(0, 0);
     }
 
@@ -249,6 +240,7 @@
       if (currentSkuIndex >= allSkus.length) {
         showModal('You have reviewed all available SKUs for this team!');
         skuNameDisplay.textContent = 'All SKUs Reviewed';
+        teamNameDisplay.textContent = '';
         skuIdDisplay.textContent = '';
         imageDisplay.innerHTML = '';
         submitBtn.disabled = true;
@@ -258,6 +250,7 @@
       const currentSku = allSkus[currentSkuIndex];
 
       skuNameDisplay.textContent = currentSku.name || 'N/A';
+      teamNameDisplay.textContent = currentSku.teamName ? `Team: ${currentSku.teamName}` : `Team: ${teamNameSelect.value || '-'}`;
       skuIdDisplay.textContent = `SKU ID: ${currentSku.id}`;
       imageDisplay.innerHTML = '';
 
@@ -292,17 +285,15 @@
     }
 
     /***** EVENTS *****/
-    // Apply team filter on login
-    loginForm.addEventListener('submit', async (e) => {
+    // Filter by team on login
+    loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const selectedTeam = teamNameSelect.value?.trim();
-
       if (!parsedData) {
         showModal('Data not loaded yet. Please wait a moment and try again.');
         return;
       }
 
-      // Filter SKUs by exact team name
       allSkus = parsedData.skus.filter(s => (s.teamName || '') === selectedTeam);
 
       loginView.classList.add('hidden');
@@ -310,6 +301,7 @@
 
       if (allSkus.length === 0) {
         skuNameDisplay.textContent = 'No SKUs';
+        teamNameDisplay.textContent = `Team: ${selectedTeam}`;
         skuIdDisplay.textContent = '';
         imageDisplay.innerHTML = '';
         submitBtn.disabled = true;
@@ -340,7 +332,6 @@
       formData.append(entryIds.skuName, currentSku.name || '');
       formData.append(entryIds.skuId, currentSku.id || '');
 
-      // If nothing selected → set Status = "Done"
       if (selectedValues.length === 0) {
         formData.append(entryIds.issueOptions, 'Done'); // must exist as a Form choice
       } else {
@@ -356,7 +347,6 @@
           mode: 'no-cors'
         });
 
-        // Treat opaque as success in no-cors mode
         if (response.ok || response.type === 'opaque') {
           currentSkuIndex++;
           displayCurrentSku();  // auto-scroll to top
