@@ -18,14 +18,40 @@
     .login-input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px var(--ring); }
     .btn-primary { width:100%; padding:.75rem; background:#3b82f6; color:#fff; border:none; border-radius:.75rem; font-size:1.125rem; font-weight:600; cursor:pointer; transition:background .2s, transform .05s; }
     .btn-primary:hover { background:#2563eb; } .btn-primary:active{ transform:scale(.98); }
+
     .image-category-title { font-size:1.25rem; font-weight:600; color:#1f2937; margin:1.5rem 0 1rem; border-bottom:2px solid #e5e7eb; padding-bottom:.5rem; }
+
     .image-card { position:relative; border:1px solid #e5e7eb; border-radius:.75rem; overflow:hidden; background:#f9fafb; transition:transform .2s, box-shadow .2s, outline .2s; }
     .image-card:hover { transform: translateY(-3px); box-shadow:0 5px 10px rgba(0,0,0,.1); }
     .image-card img { width:100%; height:auto; max-height:250px; object-fit:contain; background:#fff; }
     .image-card.selected { outline: 3px solid #3b82f6; }
     .img-check { position:absolute; top:.5rem; right:.5rem; height:22px; width:22px; }
     .seq-badge { position:absolute; top:.5rem; left:.5rem; background:rgba(0,0,0,.6); color:#fff; font-size:.75rem; font-weight:700; padding:.25rem .5rem; border-radius:999px; }
-    .kbd { border:1px solid #e5e7eb; border-bottom-width:3px; border-radius:.5rem; padding:.1rem .4rem; font-size:.75rem; background:#f9fafb; color:#374151; }
+
+    /* Transparent Zoom Button (bottom-right) */
+    .zoom-btn {
+      position:absolute; bottom:.5rem; right:.5rem;
+      display:flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border-radius:999px;
+      background:transparent; border:1px solid rgba(255,255,255,.6); color:#fff;
+      backdrop-filter: blur(0px); cursor:pointer;
+      transition: background .15s ease, transform .05s ease;
+    }
+    .zoom-btn:hover { background:rgba(0,0,0,.25); }
+    .zoom-btn:active { transform:scale(.96); }
+    .zoom-btn svg { width:18px; height:18px; }
+
+    /* Zoom Overlay: 80% of screen, input left & output right */
+    .zoom-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter: blur(2px); display:flex; align-items:center; justify-content:center; z-index:9999; }
+    .zoom-dialog { width:80vw; height:80vh; background:#000; border-radius:1rem; overflow:hidden; box-shadow:0 25px 50px rgba(0,0,0,.5); position:relative; }
+    .zoom-close { position:absolute; top:.75rem; right:.75rem; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:999px; background:rgba(255,255,255,.1); color:#fff; border:1px solid rgba(255,255,255,.3); }
+    .zoom-close:hover { background:rgba(255,255,255,.2); }
+    .zoom-pane { background:#000; display:flex; align-items:center; justify-content:center; position:relative; }
+    .zoom-pane img { max-width:100%; max-height:100%; object-fit:contain; }
+    .zoom-label { position:absolute; bottom:.5rem; left:.75rem; font-size:.75rem; color:#fff; opacity:.8; background:rgba(0,0,0,.35); padding:.2rem .45rem; border-radius:.375rem; }
+
+    /* Message modal overrides stacking below zoom */
+    #modal { z-index: 9000; }
   </style>
 </head>
 <body class="bg-gray-100">
@@ -62,7 +88,7 @@
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-800" id="sku-name-display"></h1>
             <p class="text-sm text-gray-600" id="team-name-display"></p>
           </div>
-          <p class="text-base sm:text-lg text-gray-600" id="sku-id-display"></p>
+        <p class="text-base sm:text-lg text-gray-600" id="sku-id-display"></p>
         </div>
       </div>
 
@@ -114,11 +140,30 @@
     </div>
   </div>
 
-  <!-- Modal -->
+  <!-- Message Modal -->
   <div id="modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full flex items-center justify-center">
     <div class="bg-white p-6 rounded-xl shadow-xl text-center max-w-md w-full mx-3">
       <p id="modal-message" class="text-gray-800 text-lg"></p>
       <button id="modal-close-btn" class="mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">OK</button>
+    </div>
+  </div>
+
+  <!-- Zoom Overlay (80% of screen) -->
+  <div id="zoom-overlay" class="hidden zoom-overlay">
+    <div class="zoom-dialog">
+      <button id="zoom-close" class="zoom-close" aria-label="Close zoom">
+        <span class="text-2xl leading-none">&times;</span>
+      </button>
+      <div class="w-full h-full grid grid-cols-1 md:grid-cols-2">
+        <div class="zoom-pane">
+          <img id="zoom-input-img" alt="Input image preview"/>
+          <div class="zoom-label">Input</div>
+        </div>
+        <div class="zoom-pane">
+          <img id="zoom-output-img" alt="Output image preview"/>
+          <div class="zoom-label">Output</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -129,9 +174,6 @@
 
     const formResponseUrl =
       'https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/formResponse';
-
-    // Prefilled example (for reference):
-    // https://docs.google.com/forms/d/e/1FAIpQLSf--_CEKCjaq_opP3Fi1oU8qDeExUvVuCa3GJcTV4NETK8W7g/viewform?usp=pp_url&entry.1722677845=SKU_Name&entry.1740050363=SKU_Id&entry.462099554=Team_id&entry.1537009712=Sequence&entry.1543570917=Email&entry.608047894=Image_id
 
     // ✅ Your exact Form entry IDs
     const entryIds = {
@@ -178,6 +220,12 @@
     const selectedCount = document.getElementById('selected-count');
     const clearSelectionBtn = document.getElementById('clear-selection');
 
+    // Zoom elements
+    const zoomOverlay = document.getElementById('zoom-overlay');
+    const zoomClose = document.getElementById('zoom-close');
+    const zoomInputImg = document.getElementById('zoom-input-img');
+    const zoomOutputImg = document.getElementById('zoom-output-img');
+
     /***** HELPERS *****/
     function showModal(message) {
       modalMessage.textContent = message;
@@ -220,6 +268,7 @@
         teamName: getIdx(['team_name']),
         imageCategory: getIdx(['image_category']),
         outputImageUrl: getIdx(['output_image_hres_url','output_image_url']),
+        inputImageUrl: getIdx(['input_image_hres_url','input_image_url','input_url']),  // <-- input image
         status: getIdx(['status']),
         frameSeqNo: getIdx(['frame_seq_no','sequence_no','seq_no']),
         imageId: getIdx(['ai.image_id','image_id']) // CSV header for image id
@@ -242,6 +291,7 @@
         const team_name = idx.teamName >= 0 ? (values[idx.teamName]?.trim() || '') : '';
         const image_category = idx.imageCategory >= 0 ? values[idx.imageCategory] : '';
         const output_image_url = idx.outputImageUrl >= 0 ? values[idx.outputImageUrl] : '';
+        const input_image_url = idx.inputImageUrl >= 0 ? values[idx.inputImageUrl] : '';
         const frame_seq_no = idx.frameSeqNo >= 0 ? values[idx.frameSeqNo] : '';
         const image_id = idx.imageId >= 0 ? values[idx.imageId] : '';
 
@@ -260,7 +310,9 @@
             id: sku_id,
             imageId: image_id || null,
             url: output_image_url,
-            sequenceNo: frame_seq_no ? parseInt(frame_seq_no, 10) : 0
+            inputUrl: input_image_url || '',     // store input URL
+            sequenceNo: frame_seq_no ? parseInt(frame_seq_no, 10) : 0,
+            category: image_category || ''
           });
         }
       });
@@ -296,6 +348,7 @@
         arr.push({
           imageId: card.dataset.imageId || '',
           url: card.dataset.url || '',
+          inputUrl: card.dataset.inputUrl || '',
           category: card.dataset.category || '',
           sequenceNo: card.dataset.seq ? parseInt(card.dataset.seq,10) : 0
         });
@@ -304,17 +357,30 @@
     }
 
     function imageCardHTML(image, category, skuId) {
-      const safeUrl = image.url.replace(/"/g,'&quot;');
+      const safeOut = (image.url || '').replace(/"/g,'&quot;');
+      const safeIn  = (image.inputUrl || '').replace(/"/g,'&quot;');
+      const safeCat = (category || '').replace(/"/g,'&quot;');
+      const safeImgId = (image.imageId || '').replace(/"/g,'&quot;');
+
       return `
-        <div class="image-card" 
-             data-image-id="${(image.imageId||'').replace(/"/g,'&quot;')}"
-             data-url="${safeUrl}"
-             data-category="${category.replace(/"/g,'&quot;')}"
+        <div class="image-card"
+             data-image-id="${safeImgId}"
+             data-url="${safeOut}"
+             data-input-url="${safeIn}"
+             data-category="${safeCat}"
              data-seq="${image.sequenceNo}">
           <span class="seq-badge">${image.sequenceNo}</span>
           <input type="checkbox" class="img-check" />
-          <img src="${safeUrl}" alt="SKU ${skuId} - ${category}"
+          <img src="${safeOut}" alt="SKU ${skuId} - ${category}"
                onerror="this.onerror=null;this.src='https://placehold.co/400x300/e5e7eb/7f8c8d?text=Image+Not+Found';">
+
+          <!-- Transparent Zoom Button -->
+          <button class="zoom-btn" title="Zoom" aria-label="Zoom">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
         </div>
       `;
     }
@@ -322,18 +388,57 @@
     function wireImageCardInteractions(root) {
       root.querySelectorAll('.image-card').forEach(card => {
         const cb = card.querySelector('.img-check');
+        const zoom = card.querySelector('.zoom-btn');
+
+        // Clicking the card toggles selection
         card.addEventListener('click', (e) => {
-          if (e.target === cb) return; // don't double-toggle
+          if (e.target === cb || e.target === zoom || zoom.contains(e.target)) return;
           cb.checked = !cb.checked;
           card.classList.toggle('selected', cb.checked);
           updateSelectedCount();
         });
+
+        // Checkbox manual change
         cb.addEventListener('change', () => {
           card.classList.toggle('selected', cb.checked);
           updateSelectedCount();
         });
+
+        // Zoom button opens the zoom overlay
+        zoom.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const inputUrl = card.dataset.inputUrl || '';
+          const outputUrl = card.dataset.url || '';
+          openZoom(inputUrl, outputUrl);
+        });
       });
     }
+
+    function openZoom(inputUrl, outputUrl) {
+      // If input is missing, show placeholder
+      zoomInputImg.src = inputUrl || 'https://placehold.co/1200x800/111/AAA?text=No+Input+Image';
+      zoomOutputImg.src = outputUrl || 'https://placehold.co/1200x800/111/AAA?text=No+Output+Image';
+      zoomOverlay.classList.remove('hidden');
+      // Prevent background scroll
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeZoom() {
+      zoomOverlay.classList.add('hidden');
+      document.body.style.overflow = '';
+      // Clear sources to free memory on large images
+      zoomInputImg.src = '';
+      zoomOutputImg.src = '';
+    }
+
+    zoomClose.addEventListener('click', closeZoom);
+    zoomOverlay.addEventListener('click', (e) => {
+      // Close when clicking dark backdrop (not when clicking inside dialog)
+      if (e.target === zoomOverlay) closeZoom();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !zoomOverlay.classList.contains('hidden')) closeZoom();
+    });
 
     function displayCurrentSku() {
       scrollToTop();
@@ -384,17 +489,11 @@
       updateSelectedCount();
     }
 
-    function sleep(ms) {
-      return new Promise(res => setTimeout(res, ms));
-    }
+    function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
 
     async function postToForm(formData) {
       try {
-        await fetch(formResponseUrl, {
-          method: 'POST',
-          body: formData,
-          mode: 'no-cors'
-        });
+        await fetch(formResponseUrl, { method: 'POST', body: formData, mode: 'no-cors' });
         return true; // opaque; assume success
       } catch (e) {
         console.error('Form post error:', e);
@@ -458,9 +557,7 @@
         if (selectedValues.length === 0) {
           fd.append(entryIds.issueOptions, 'Done'); // must exist in Form choices
         } else {
-          selectedValues.forEach(v => {
-            fd.append(entryIds.issueOptions, statusChoiceMap[v] ?? v);
-          });
+          selectedValues.forEach(v => fd.append(entryIds.issueOptions, statusChoiceMap[v] ?? v));
         }
         return fd;
       };
@@ -468,7 +565,6 @@
       // If images selected → N posts (one per image)
       const selectedImages = getSelectedImagesForCurrentSku();
       if (selectedImages.length > 0) {
-        // If form expects Image ID, ensure every selected image has one
         const expectsImageId = entryIds.imageId && entryIds.imageId.startsWith('entry.');
         if (expectsImageId && selectedImages.some(img => !img.imageId)) {
           showModal('One or more selected images do not have image_id in the CSV. Please update the feed or deselect those images.');
@@ -521,6 +617,9 @@
         case '4': document.querySelector('input[value="option1"]').click(); break;
         case '5': document.querySelector('input[value="option2"]').click(); break;
         case 'Enter': submitBtn.click(); break;
+        case 'Escape':
+          if (!zoomOverlay.classList.contains('hidden')) closeZoom();
+          break;
       }
     });
 
