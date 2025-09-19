@@ -50,7 +50,27 @@
     .zoom-pane img { max-width:100%; max-height:100%; object-fit:contain; }
     .zoom-label { position:absolute; bottom:.5rem; left:.75rem; font-size:.75rem; color:#fff; opacity:.8; background:rgba(0,0,0,.35); padding:.2rem .45rem; border-radius:.375rem; }
 
-    /* Message modal overrides stacking below zoom */
+    /* Bottom status bar inside zoom */
+    .zoom-statusbar {
+      position:absolute; left:0; right:0; bottom:0;
+      background:rgba(0,0,0,.55);
+      backdrop-filter: blur(3px);
+      padding:.5rem .75rem;
+      display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:.5rem;
+      border-top: 1px solid rgba(255,255,255,.1);
+    }
+    .chip {
+      padding:.35rem .6rem; font-size:.8rem; border-radius:999px;
+      border:1px solid rgba(255,255,255,.35); color:#fff; background:rgba(255,255,255,.06);
+      cursor:pointer; user-select:none;
+    }
+    .chip.active { background:#2563eb; border-color:#2563eb; }
+    .chip[disabled] { opacity:.45; cursor:not-allowed; }
+    .chip-ghost { background:transparent; }
+    .chip-danger { border-color:#f87171; color:#fff; }
+    .chip-danger:hover { background:rgba(248,113,113,.2); }
+
+    /* Message modal stacks below zoom */
     #modal { z-index: 9000; }
   </style>
 </head>
@@ -88,7 +108,7 @@
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-800" id="sku-name-display"></h1>
             <p class="text-sm text-gray-600" id="team-name-display"></p>
           </div>
-        <p class="text-base sm:text-lg text-gray-600" id="sku-id-display"></p>
+          <p class="text-base sm:text-lg text-gray-600" id="sku-id-display"></p>
         </div>
       </div>
 
@@ -164,6 +184,11 @@
           <div class="zoom-label">Output</div>
         </div>
       </div>
+
+      <!-- Per-image status chips -->
+      <div id="zoom-statusbar" class="zoom-statusbar">
+        <!-- Chips injected dynamically -->
+      </div>
     </div>
   </div>
 
@@ -183,9 +208,9 @@
       skuName: 'entry.1722677845',      // SKU_Name
       skuId: 'entry.1740050363',        // SKU_Id
       imageId: 'entry.608047894',       // Image_id
-      imageUrl: '',                     // (optional) add if you create a Form field
-      imageCategory: '',                // (optional) add if you create a Form field
-      frameSeqNo: ''                    // (optional) add if you create a Form field
+      imageUrl: '',                     // (optional)
+      imageCategory: '',                // (optional)
+      frameSeqNo: ''                    // (optional)
     };
 
     const statusChoiceMap = {
@@ -195,6 +220,7 @@
       option1: 'Option 1',
       option2: 'Option 2'
     };
+    const STATUS_LABELS = ['Sequence','Tilt','Issue','Option 1','Option 2','Done'];
 
     // Throttle between Google Form hits to avoid rate limits (ms)
     const POST_DELAY_MS = 300;
@@ -203,6 +229,10 @@
     let parsedData = null;
     let allSkus = [];
     let currentSkuIndex = 0;
+
+    // Per-image issues: Map<imageId, Set<statusLabels>>
+    const perImageIssues = new Map();
+    let currentZoomImageId = null;
 
     const loginView = document.getElementById('login-view');
     const qcView = document.getElementById('qc-view');
@@ -225,6 +255,7 @@
     const zoomClose = document.getElementById('zoom-close');
     const zoomInputImg = document.getElementById('zoom-input-img');
     const zoomOutputImg = document.getElementById('zoom-output-img');
+    const zoomStatusbar = document.getElementById('zoom-statusbar');
 
     /***** HELPERS *****/
     function showModal(message) {
@@ -268,10 +299,10 @@
         teamName: getIdx(['team_name']),
         imageCategory: getIdx(['image_category']),
         outputImageUrl: getIdx(['output_image_hres_url','output_image_url']),
-        inputImageUrl: getIdx(['input_image_hres_url','input_image_url','input_url']),  // <-- input image
+        inputImageUrl: getIdx(['input_image_hres_url','input_image_url','input_url']),
         status: getIdx(['status']),
         frameSeqNo: getIdx(['frame_seq_no','sequence_no','seq_no']),
-        imageId: getIdx(['ai.image_id','image_id']) // CSV header for image id
+        imageId: getIdx(['ai.image_id','image_id'])
       };
 
       const dataLines = lines.slice(1);
@@ -310,7 +341,7 @@
             id: sku_id,
             imageId: image_id || null,
             url: output_image_url,
-            inputUrl: input_image_url || '',     // store input URL
+            inputUrl: input_image_url || '',
             sequenceNo: frame_seq_no ? parseInt(frame_seq_no, 10) : 0,
             category: image_category || ''
           });
@@ -407,25 +438,111 @@
         // Zoom button opens the zoom overlay
         zoom.addEventListener('click', (e) => {
           e.stopPropagation();
-          const inputUrl = card.dataset.inputUrl || '';
-          const outputUrl = card.dataset.url || '';
-          openZoom(inputUrl, outputUrl);
+          openZoom({
+            imageId: card.dataset.imageId || '',
+            inputUrl: card.dataset.inputUrl || '',
+            outputUrl: card.dataset.url || ''
+          }, card);
         });
       });
     }
 
-    function openZoom(inputUrl, outputUrl) {
+    function renderZoomChips(imageId) {
+      zoomStatusbar.innerHTML = '';
+      const disabled = !imageId;
+      const selectedSet = perImageIssues.get(imageId) || new Set();
+
+      // Helper to create a chip
+      const makeChip = (label, opts={}) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip';
+        chip.textContent = label;
+        if (opts.ghost) chip.classList.add('chip-ghost');
+        if (opts.danger) chip.classList.add('chip-danger');
+        if (disabled) chip.setAttribute('disabled','');
+        if (selectedSet.has(label)) chip.classList.add('active');
+        chip.addEventListener('click', () => {
+          // ensure we have a set
+          let set = perImageIssues.get(imageId);
+          if (!set) { set = new Set(); perImageIssues.set(imageId, set); }
+
+          if (label === 'Done') {
+            // Done is exclusive
+            if (set.has('Done')) {
+              set.delete('Done');
+            } else {
+              set.clear();
+              set.add('Done');
+            }
+          } else {
+            // toggling any other removes Done
+            if (set.has(label)) {
+              set.delete(label);
+            } else {
+              set.add(label);
+              set.delete('Done');
+            }
+          }
+          renderZoomChips(imageId); // re-render to reflect
+          // Auto-select the image in grid if statuses set
+          if (set.size > 0) {
+            const card = document.querySelector(`.image-card[data-image-id="${CSS.escape(imageId)}"]`);
+            if (card) {
+              const cb = card.querySelector('.img-check');
+              if (cb && !cb.checked) {
+                cb.checked = true;
+                card.classList.add('selected');
+                updateSelectedCount();
+              }
+            }
+          }
+        });
+        return chip;
+      };
+
+      // Status chips
+      STATUS_LABELS.forEach(label => {
+        zoomStatusbar.appendChild(makeChip(label));
+      });
+
+      // Separator
+      const sep = document.createElement('span');
+      sep.style.width = '1px';
+      sep.style.height = '18px';
+      sep.style.background = 'rgba(255,255,255,.25)';
+      sep.style.margin = '0 .5rem';
+      zoomStatusbar.appendChild(sep);
+
+      // Clear chip
+      const clearChip = makeChip('Clear', {ghost:true, danger:true});
+      clearChip.addEventListener('click', () => {
+        perImageIssues.delete(imageId);
+        renderZoomChips(imageId);
+      });
+      zoomStatusbar.appendChild(clearChip);
+    }
+
+    function openZoom({imageId, inputUrl, outputUrl}, cardEl) {
+      currentZoomImageId = imageId || null;
+
       // If input is missing, show placeholder
       zoomInputImg.src = inputUrl || 'https://placehold.co/1200x800/111/AAA?text=No+Input+Image';
       zoomOutputImg.src = outputUrl || 'https://placehold.co/1200x800/111/AAA?text=No+Output+Image';
+
+      // Build chips for this image
+      renderZoomChips(currentZoomImageId);
+
       zoomOverlay.classList.remove('hidden');
-      // Prevent background scroll
       document.body.style.overflow = 'hidden';
+
+      // If user starts to mark issues for an image without selecting, we'll auto-select on first toggle (handled in chip click)
     }
 
     function closeZoom() {
       zoomOverlay.classList.add('hidden');
       document.body.style.overflow = '';
+      currentZoomImageId = null;
       // Clear sources to free memory on large images
       zoomInputImg.src = '';
       zoomOutputImg.src = '';
@@ -433,8 +550,7 @@
 
     zoomClose.addEventListener('click', closeZoom);
     zoomOverlay.addEventListener('click', (e) => {
-      // Close when clicking dark backdrop (not when clicking inside dialog)
-      if (e.target === zoomOverlay) closeZoom();
+      if (e.target === zoomOverlay) closeZoom(); // backdrop click
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !zoomOverlay.classList.contains('hidden')) closeZoom();
@@ -544,9 +660,11 @@
         return;
       }
 
-      const selectedValues = Array.from(
+      // Global status checkboxes (fallback for images without per-image statuses)
+      const globalValuesRaw = Array.from(
         document.querySelectorAll('input[name="qc_option"]:checked')
       ).map(cb => cb.value);
+      const globalValues = globalValuesRaw.map(v => (statusChoiceMap[v] ?? v)); // map option1->Option 1
 
       const buildBaseFormData = () => {
         const fd = new URLSearchParams();
@@ -554,11 +672,6 @@
         fd.append(entryIds.teamName, teamNameSelect.value);
         fd.append(entryIds.skuName, currentSku.name || '');
         fd.append(entryIds.skuId, currentSku.id || '');
-        if (selectedValues.length === 0) {
-          fd.append(entryIds.issueOptions, 'Done'); // must exist in Form choices
-        } else {
-          selectedValues.forEach(v => fd.append(entryIds.issueOptions, statusChoiceMap[v] ?? v));
-        }
         return fd;
       };
 
@@ -576,6 +689,15 @@
         for (let i = 0; i < selectedImages.length; i++) {
           const img = selectedImages[i];
           const fd = buildBaseFormData();
+
+          // Decide statuses to send for THIS image
+          const perSet = img.imageId ? perImageIssues.get(img.imageId) : null;
+          let statuses = perSet && perSet.size ? Array.from(perSet) : (globalValues.length ? globalValues : ['Done']);
+          // Ensure 'Done' is exclusive if mixed (safety)
+          if (statuses.includes('Done') && statuses.length > 1) statuses = ['Done'];
+
+          // Append statuses
+          statuses.forEach(s => fd.append(entryIds.issueOptions, s));
 
           // Per-image fields
           if (entryIds.imageId && img.imageId) fd.append(entryIds.imageId, img.imageId);
@@ -598,6 +720,8 @@
       // Else: single SKU-level submission (original behavior)
       try {
         const fd = buildBaseFormData();
+        const statuses = globalValues.length ? globalValues : ['Done'];
+        statuses.forEach(s => fd.append(entryIds.issueOptions, s));
         await postToForm(fd);
         currentSkuIndex++;
         displayCurrentSku();
